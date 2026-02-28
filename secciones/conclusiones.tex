@@ -1,30 +1,17 @@
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SECCIÓN 7: CONCLUSIONES (VERSIÓN RESUMIDA Y HUMANIZADA)
+% SECCIÓN 7: CONCLUSIONES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Conclusiones}
+\chapter{Conclusiones}
 
-Esta investigación permitió entender que las bases de datos no surgieron de la nada: fueron evolucionando conforme el hardware y las necesidades lo fueron permitiendo. A continuación se resumen las ideas más importantes:
+Esta investigación dejó claro que las bases de datos no se pueden entender bien sin conocer el contexto en que surgieron. Cada decisión arquitectónica tiene una razón detrás, y muchas veces esa razón es histórica.
 
-\begin{enumerate}
-    \item \textbf{El hardware limitó la teoría:} 
-    Codd propuso el modelo relacional en 1970, pero tardó más de una década en adoptarse masivamente porque la memoria RAM era carísima. El modelo era bueno desde el principio, el hardware era el que no estaba listo.
+\textbf{El hardware limitó la teoría, no al revés.} Codd propuso el modelo relacional en 1970, pero tardó más de una década en adoptarse masivamente porque la RAM era carísima. El modelo era correcto desde el principio; el hardware era el que no estaba listo. Entender esto cambia la forma de leer la historia de las bases de datos.
 
-    \item \textbf{Pasar de archivos planos a tablas fue un salto enorme:} 
-    Los sistemas anteriores mezclaban la lógica de los datos con cómo estaban guardados físicamente. Separar esas dos cosas fue lo que hizo que las bases de datos relacionales fueran tan poderosas y flexibles.
+\textbf{La arquitectura de Oracle no es arbitraria.} Estudiar en detalle sus procesos y componentes de memoria deja claro que cada pieza responde a una pregunta concreta: ¿qué pasa si se va la luz justo después de un commit? ¿cómo se evita que un usuario bloquee a todos los demás? Las respuestas a esas preguntas son, literalmente, la arquitectura del sistema.
 
-    \item \textbf{Oracle es lo que es gracias a años de experiencia:} 
-    Cada proceso y componente de su arquitectura existe para responder una pregunta concreta: ¿cómo no perder datos si se va la luz? ¿cómo atender a miles de usuarios a la vez sin que se pisen? No es diseño caprichoso, es experiencia acumulada.
+\textbf{No hay un SGBD universalmente superior.} PostgreSQL resuelve el MVCC de forma más limpia que Oracle, pero esa misma decisión complica el VACUUM. MySQL es más simple de operar, pero esa simpleza tiene un precio en escenarios de alta concurrencia. Oracle es el más robusto y también el más caro y complejo. Hay trade-offs, no ganadores.
 
+\textbf{La brecha entre usar y entender un SGBD es grande.} Es perfectamente posible escribir SQL durante años sin saber qué hace LGWR o por qué importa el tamaño del buffer cache. Pero esa ignorancia tiene un costo cuando algo falla en producción o cuando hay que tomar decisiones de diseño que afectarán el rendimiento a largo plazo.
 
-    \item \textbf{Garantía ACID en acción:} 
-    La integridad de la información surje gracial al trabajo coordinado entre memoria, procesos y archivos. Elementos como el \textit{buffer cache} y los \textit{redo logs} son los que permiten que las propiedades ACID pasen de ser conceptos teóricos a elementos reales de seguridad para el usuario.
-
-    \item \textbf{Diversidad de soluciones:} 
-    La comparativa técnica revela que no existe un SGBD "perfecto", sino uno adecuado para cada necesidad. Mientras Oracle y SQL Server lideran el sector empresarial, PostgreSQL destaca por su robustez de código abierto y MySQL por su agilidad en entornos web de alta lectura.
-
-    \item \textbf{La arquitectura dicta el éxito:} 
-    Finalmente, se concluye que el rendimiento y la escalabilidad de cualquier sistema de información dependen de su base física. La elección del SGBD correcto debe basarse en un análisis crítico de la carga de trabajo, el presupuesto y las capacidades técnicas del equipo.
-\end{enumerate}
 \clearpage

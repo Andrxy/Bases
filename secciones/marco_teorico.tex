@@ -3,56 +3,31 @@
 % ============================================================
 \chapter{Marco teórico}
 
-% TODO: El marco teórico establece las bases conceptuales sobre las que se apoya
-%       el desarrollo temático. Debe fundamentarse en fuentes académicas (APA 7).
-
-
 \section{Definición de base de datos y SGBD}
 
-Una base de datos es una colección organizada de datos relacionados que representan aspectos del mundo real, mientras que un SGBD es el software que permite su creación, mantenimiento y control de acceso, actuando como interfaz entre el usuario y los archivos físicos. Diversos autores han aportado definiciones complementarias:
-
-\begin{itemize}
-    \item \textbf{C.J. Date} la describe como un sistema para almacenar información y permitir su disponibilidad bajo demanda.
-    \item \textbf{Silberschatz, Korth y Sudarshan} la definen como una colección de datos interrelacionados junto con programas para acceder a ellos.
-    \item \textbf{Edgar F. Codd} enfocó su definición en la independencia de los datos respecto al almacenamiento físico, permitiendo interactuar con una representación lógica de la información.
-\end{itemize}
+Una base de datos es una colección organizada de datos que representa aspectos del mundo real, mientras que un SGBD es el software que permite su creación, mantenimiento y control de acceso, actuando como capa intermedia entre el usuario y los archivos físicos. Distintos autores enfatizan aspectos diferentes: \textcite{silberschatz_2019} subrayan la relación entre los datos y los programas que los gestionan; \textcite{elmasri_2016} destacan que esa colección modela algo externo y concreto. La distinción que más importa para este trabajo es la de \textcite{codd_1970}: separar la visión lógica de los datos de cómo están físicamente almacenados. Esa independencia fue la ruptura central que hizo posible el modelo relacional.
 
 \section{Modelo relacional}
 
-Propuesto por \textcite{codd_1970} , organiza los datos mediante \textbf{relaciones} (tablas), \textbf{tuplas} (filas) y \textbf{atributos} (columnas), garantizando la \textbf{integridad referencial} entre tablas. Complementariamente, los \textbf{doce principios de Codd} establecen que un sistema debe gestionar la base de datos exclusivamente a través de sus capacidades relacionales, asegurando la independencia física y lógica de los datos.
+La propuesta de \textcite{codd_1970} organizó los datos en \textbf{relaciones} (tablas), \textbf{tuplas} (filas) y \textbf{atributos} (columnas), apoyada en álgebra relacional y lógica de predicados. Lo que la distinguió de los modelos anteriores no fue solo la estructura tabular, sino la garantía de independencia física: la misma consulta funcionaba sin importar cómo estuvieran organizados los datos en disco. Posteriormente, \textcite{codd1982} formalizó los criterios que un sistema debe cumplir para considerarse verdaderamente relacional.
 
 \section{Propiedades ACID}
 
-Las propiedades ACID garantizan la fiabilidad de las transacciones en los SGBD de producción:
+Formalizadas por \textcite{haerder1983}, las propiedades ACID definen qué significa que una transacción sea confiable:
 
 \begin{itemize}
-    \item \textbf{Atomicidad:} una transacción se completa en su totalidad o no se ejecuta en absoluto.
-    \item \textbf{Consistencia:} cada transacción lleva la base de datos de un estado válido a otro, respetando las reglas de integridad.
-    \item \textbf{Aislamiento:} las transacciones se ejecutan de forma independiente, sin interferencias entre operaciones simultáneas.
-    \item \textbf{Durabilidad:} los efectos de una transacción confirmada son permanentes, incluso ante fallos del sistema.
+    \item \textbf{Atomicidad:} la transacción se ejecuta completa o no se ejecuta.
+    \item \textbf{Consistencia:} lleva la base de datos de un estado válido a otro.
+    \item \textbf{Aislamiento:} las transacciones concurrentes no se interfieren entre sí.
+    \item \textbf{Durabilidad:} los efectos de una transacción confirmada persisten ante fallos.
 \end{itemize}
 
 \section{Arquitectura cliente-servidor en bases de datos}
 
-Define cómo los clientes interactúan con el motor de base de datos. Sus principales variantes son:
-
-\begin{itemize}
-    \item \textbf{2 capas:} el cliente se comunica directamente con el servidor de base de datos.
-    \item \textbf{3 capas:} un servidor de aplicaciones intermedio mejora la escalabilidad y la seguridad.
-    \item \textbf{Distribuida:} la base de datos se reparte entre múltiples nodos, aumentando la disponibilidad y el procesamiento paralelo.
-\end{itemize}
-
-En sistemas como Oracle, esta arquitectura gestiona procesos en segundo plano (como DBWR y LGWR) para coordinar las peticiones concurrentes en entornos multiusuario.
+La separación entre cliente y servidor permite que múltiples usuarios trabajen simultáneamente sobre la misma base de datos. Oracle añade una distinción importante: la \textbf{instancia} (memoria y procesos, temporal) versus la \textbf{base de datos} (archivos en disco, persistente). Ante una falla, la instancia desaparece pero los archivos permanecen, lo que hace posible la recuperación.
 
 \section{Conceptos de memoria y almacenamiento relevantes}
 
-El rendimiento de un SGBD depende estrechamente de su arquitectura de memoria y almacenamiento:
+El rendimiento de un SGBD depende de cuánto puede mantener en RAM y cuánto debe ir a buscar al disco. La \textbf{memoria RAM} permite sostener buffers que reducen los accesos físicos; en Oracle, el componente principal es el \textit{Buffer Cache} dentro de la SGA. El \textbf{almacenamiento secundario} (HDD o SSD) aloja los datos de forma permanente. La diferencia de velocidad entre ambos, varios órdenes de magnitud, explica por qué el dimensionamiento del buffer cache es una de las decisiones más críticas en la administración de cualquier motor.
 
-\begin{itemize}
-    \item \textbf{RAM:} permite mantener buffers amplios que reducen los accesos al almacenamiento físico, impactando directamente en el rendimiento.
-    \item \textbf{Caché y Buffer Pool:} almacenan temporalmente los datos más consultados. En Oracle se denomina \textit{Buffer Cache}, dentro de la SGA.
-    \item \textbf{Almacenamiento secundario (HDD/SSD):} aloja de forma permanente los datafiles y archivos de control. La adopción de SSD ha mejorado drásticamente las velocidades de lectura y escritura.
-\end{itemize}
-
-La arquitectura de memoria de Oracle (SGA y PGA) condiciona la capacidad del sistema para gestionar transacciones complejas y controlar la concurrencia eficientemente.
 \clearpage

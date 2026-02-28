@@ -5,21 +5,19 @@
 
 \section{Contexto y motivación}
 
-Hoy casi cualquier sistema de información depende de una base de datos. Sin embargo, no siempre fue así. Antes de los SGBD, cada aplicación manejaba sus propios archivos, lo que generaba datos duplicados, inconsistencias y programas totalmente acoplados a la estructura física de sus datos. Los SGBD surgieron para resolver ese caos, y con el modelo relacional de Codd en 1970 llegó la solución más elegante: separar la visión lógica de los datos de cómo están guardados físicamente.
-
-Entender la arquitectura interna de estos sistemas va más allá de lo académico. Saber cómo un motor gestiona su memoria, qué hacen sus procesos en segundo plano y por qué organiza los archivos de cierta manera es lo que permite diseñar sistemas eficientes y resolver problemas reales de rendimiento.
+Hoy casi cualquier sistema de información depende de una base de datos, pero es fácil usarlas sin entender cómo funcionan por dentro. Saber qué ocurre exactamente cuando se ejecuta un \texttt{COMMIT}, quién escribe los datos al disco o qué pasa ante una falla de energía no suele cubrirse en cursos introductorios. Esta investigación parte de esa curiosidad: no solo describir los sistemas, sino entender por qué están diseñados como están, algo que requirió ir hacia atrás y revisar el contexto histórico y de hardware en que surgieron.
 
 \section{Planteamiento del problema}
 
-La pregunta central de esta investigación es: \textit{¿cómo condicionó la evolución del hardware la adopción masiva del modelo relacional, y cómo se refleja esto en la arquitectura física de los SGBD actuales?}
+La pregunta central es: \textit{¿cómo condicionó la evolución del hardware la adopción masiva del modelo relacional, y cómo se refleja eso en la arquitectura física de los SGBD actuales?}
 
-Codd publicó su propuesta en 1970, pero su adopción masiva tardó más de una década. La razón es concreta: el modelo relacional exige operaciones costosas como joins y evaluación de predicados, que requieren suficiente RAM para ser eficientes. En los años 70, esa memoria era escasa y carísima. Cada componente de la arquitectura de un SGBD moderno existe, en parte, como respuesta a esa limitación histórica.
+Codd publicó su propuesta en 1970 pero durante más de una década fue considerada demasiado costosa para uso práctico. La razón es concreta: el modelo relacional exige operaciones intensivas en memoria, y en los años 70 esa memoria era escasa y cara. Cada componente de la arquitectura de un SGBD moderno existe, en parte, como respuesta a esa limitación histórica.
 
 \section{Alcances y limitaciones}
 
-Este estudio analiza Oracle Database, PostgreSQL, MySQL e InnoDB y Microsoft SQL Server desde una perspectiva técnica y comparativa, enfocándose en arquitectura de memoria, modelo de procesos, organización de archivos físicos y mecanismos de logging transaccional. No se incluyen pruebas de rendimiento empíricas ni instalación de instancias reales. El análisis se basa en documentación oficial y distintos articulos.
+El análisis cubre Oracle, PostgreSQL, MySQL con InnoDB y SQL Server, enfocándose en arquitectura de memoria, procesos, archivos físicos y logging transaccional. No se realizaron pruebas empíricas de rendimiento ni instalaciones reales; el trabajo es documental y comparativo.
 
 \section{Estructura del documento}
 
-El \textbf{Capítulo 2} establece el marco teórico: definiciones de base de datos, SGBD, modelo relacional, propiedades ACID y conceptos clave de memoria y almacenamiento. El \textbf{Capítulo 3} recorre la historia desde los archivos planos hasta los primeros SGBD comerciales. El \textbf{Capítulo 4} analiza cómo el avance del hardware hizo viable el modelo relacional. El \textbf{Capítulo 5} describe en detalle la arquitectura física de Oracle. El \textbf{Capítulo 6} presenta la comparativa entre los cuatro motores, con conclusiones y recomendaciones.
+El \textbf{Capítulo 2} establece el marco teórico. El \textbf{Capítulo 3} recorre la historia desde los archivos planos hasta los primeros SGBD comerciales. El \textbf{Capítulo 4} analiza cómo el hardware hizo viable el modelo relacional. El \textbf{Capítulo 5} describe la arquitectura física de Oracle. El \textbf{Capítulo 6} presenta la comparativa entre los cuatro motores. Finalmente se presentan conclusiones y recomendaciones.
 \clearpage

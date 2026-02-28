@@ -246,50 +246,36 @@ reproduciendo ese log.
 \end{table}
 \end{landscape}
 
+% ============================================================
+%  TEMA 4 — Sección: Ventajas y desventajas estructurales
+%  (reemplaza la sección \section{Ventajas y desventajas estructurales}
+%   al final de tema4_comparativa.tex)
+% ============================================================
+
 \section{Ventajas y desventajas estructurales}
 
 \subsection{Oracle Database}
 
-La principal fortaleza de Oracle es su madurez arquitectónica. Décadas de
-desarrollo se reflejan en características como RAC (\textit{Real Application
-Clusters}) para clustering nativo, ASM (\textit{Automatic Storage Management})
-para gestión de almacenamiento, y un sistema de recuperación ante fallos robusto
-y bien documentado.
+Oracle es el motor más maduro del grupo y eso se nota. Características como RAC para clustering nativo o ASM para gestión de almacenamiento son el resultado de décadas resolviendo problemas reales en producción, no de diseño en papel. Su sistema de recuperación ante fallos es robusto y está bien documentado, lo que en entornos críticos vale mucho.
 
-Las desventajas son igualmente conocidas: el costo de licenciamiento es
-significativo y puede ser prohibitivo para organizaciones pequeñas, la
-administración requiere conocimientos especializados, y la instancia en sí
-consume recursos considerables incluso en reposo \citep{greenwald_oracle}.
+El problema es que toda esa madurez tiene un precio, y no solo en licenciamiento. Administrar Oracle correctamente requiere conocimientos especializados que no son fáciles de conseguir ni baratos. Una instancia mal configurada consume recursos considerables incluso sin carga. Para una organización pequeña o un proyecto con presupuesto ajustado, Oracle puede ser demasiado para lo que se necesita \parencite{greenwald_oracle}.
 
 \subsection{PostgreSQL}
 
-Destaca por ser software libre con un modelo de MVCC arquitectónicamente
-limpio: en lugar de un segmento de undo separado, almacena las versiones anteriores
-de las filas directamente en el heap de la tabla, lo que simplifica el diseño
-interno.
+Lo que más llama la atención de PostgreSQL desde el punto de vista arquitectónico es cómo implementa el MVCC. En lugar de mantener un segmento de undo separado como Oracle, guarda las versiones anteriores de las filas directamente en el heap de la tabla. Es una decisión de diseño más limpia en teoría, pero tiene una consecuencia concreta: si esas versiones antiguas no se limpian periódicamente, la tabla crece sin control. Eso es lo que hace el proceso VACUUM, que no existe en Oracle precisamente porque Oracle resolvió el problema de otra manera \parencite{postgresql_docs}.
 
-Su mayor limitante estructural es el modelo de un proceso por conexión, que puede
-saturar el sistema operativo ante muchas conexiones simultáneas \citep{postgresql_docs}.
+Su otra limitación conocida es el modelo de un proceso por conexión. En aplicaciones con cientos de conexiones simultáneas esto puede saturar el sistema operativo, lo que explica por qué herramientas como PgBouncer existen y son tan usadas en producción.
 
 \subsection{MySQL / InnoDB}
 
-Construyó su reputación en el ecosistema web gracias a su rendimiento en
-lecturas y su facilidad de configuración. 
+MySQL construyó su reputación en entornos web y en ese contexto funciona bien. Es más simple de configurar que Oracle y su rendimiento en lecturas es sólido. El problema es que esa simpleza tiene límites: en escenarios con escrituras concurrentes complejas, el \textit{gap locking} de InnoDB puede generar bloqueos que no son intuitivos y que son difíciles de diagnosticar si no se conoce bien el motor \parencite{mysql_docs}.
 
-Sin embargo, su historia de múltiples motores de almacenamiento intercambiables
-dejó inconsistencias que persisten hoy. Su conformidad con el estándar SQL tiene
-limitaciones históricas, y el \textit{gap locking} de InnoDB puede generar bloqueos inesperados
-si no se conoce bien \citep{mysql_docs}.
+Su historia de múltiples motores de almacenamiento intercambiables también dejó inconsistencias que persisten. No todos los motores soportaban transacciones, no todos soportaban llaves foráneas, y aunque InnoDB resolvió la mayor parte de eso, la percepción de MySQL como motor "menos serio" para aplicaciones críticas tiene algo de base histórica.
 
 \subsection{Microsoft SQL Server}
 
-SQL Server sobresale en entornos corporativos donde el ecosistema Microsoft es
-predominante. Su integración con herramientas de BI como SSRS, SSIS y SSAS, junto
-con características como In-Memory OLTP para cargas transaccionales extremas, lo
-hacen muy completo.
+SQL Server es una opción sólida cuando el entorno ya es predominantemente Microsoft. Su integración con herramientas de BI como SSRS y SSIS, junto con características como In-Memory OLTP, lo hacen muy completo para escenarios empresariales. SQLOS, su scheduler interno, le da un nivel de control sobre el uso de CPU que otros motores no tienen \parencite{sqlserver_docs}.
 
-Sus desventajas son el costo de licenciamiento, comparable al de Oracle en ediciones
-Enterprise, y aunque existe una versión para Linux, históricamente ha sido una
-plataforma predominantemente Windows, lo que limita su adopción en entornos donde
-Linux es el estándar \citep{sqlserver_docs}.
+La desventaja más evidente es el costo, comparable al de Oracle en ediciones Enterprise. Además, aunque existe una versión para Linux, SQL Server sigue siendo una plataforma pensada para Windows. En infraestructuras donde Linux es el estándar, eso genera fricciones que no son solo técnicas sino también organizacionales.
+
 \clearpage
