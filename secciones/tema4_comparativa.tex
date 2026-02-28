@@ -1,0 +1,295 @@
+% ============================================================
+%  TEMA 4 — Comparativa de estructuras físicas entre SGBD
+% ============================================================
+\chapter{Comparativa de estructuras físicas entre SGBD}
+
+\section{Introducción a la comparativa}
+
+Comparar Oracle, PostgreSQL, MySQL y SQL Server no es solo una cuestión de cuál
+es más rápido o más popular. Lo que realmente importa es analizar
+cómo cada uno resolvió los mismos problemas fundamentales: gestionar memoria,
+procesos, archivos y transacciones. Esto desde filosofías de diseño distintas.
+
+% ── 4.1 Arquitectura de memoria ──────────────────────────────────────────────
+\section{Diferencias en la arquitectura de memoria}
+
+\subsection{Oracle Database}
+
+Oracle divide su memoria en
+la \textbf{SGA} y la
+\textbf{PGA}. La gestión puede ser automática
+mediante AMM o ASMM, lo que permite a Oracle redistribuir memoria entre
+componentes según la carga \citep{oracle_concepts_19c}.
+
+\subsection{PostgreSQL}
+
+Tiene un modelo de memoria más simple y, en parte, delega la gestión
+al sistema operativo. El parámetro \texttt{shared\_buffers} define el buffer
+compartido entre todos los procesos, equivalente al buffer cache de Oracle, aunque
+PostgreSQL también aprovecha el \textit{OS page cache} para lecturas, por lo que
+el tamaño efectivo de caché suele ser mayor que lo que indica ese parámetro solo.
+
+Cada proceso backend tiene su propia \texttt{work\_mem}, que define cuánta memoria
+puede usar para operaciones individuales de ordenamiento o hash join, análogo al
+SQL Work Area de la PGA de Oracle. Existe además \texttt{maintenance\_work\_mem}
+para operaciones de mantenimiento como \texttt{VACUUM} o \texttt{CREATE INDEX}, y
+\texttt{wal\_buffers} como buffer en memoria antes de escribir el WAL al disco.
+El parámetro \texttt{effective\_cache\_size} no reserva memoria real sino que es
+una sugerencia al planificador de consultas sobre cuánta caché total estima que
+hay disponible \citep{postgresql_docs}.
+
+\subsection{MySQL / InnoDB}
+
+En MySQL el componente central de memoria es el \textbf{InnoDB Buffer Pool},
+controlado por \texttt{innodb\_buffer\_pool\_size}. Es el equivalente más directo
+al buffer cache de Oracle y almacena tanto páginas de datos como de índices. Para
+reducir la contención en sistemas con alta concurrencia, puede dividirse en
+múltiples instancias mediante \texttt{innodb\_buffer\_pool\_instances}.
+
+InnoDB también mantiene un \textbf{Log Buffer} (\texttt{innodb\_log\_buffer\_size})
+donde acumula entradas de redo antes de escribirlas al disco, y un
+\textbf{Adaptive Hash Index} que construye dinámicamente en memoria para acelerar
+búsquedas repetitivas en índices de un árbol B+ \citep{mysql_docs}.
+
+\subsection{Microsoft SQL Server}
+
+Gestiona su memoria mediante un único \textbf{Buffer Pool} dinámico,
+administrado por el componente interno \textbf{SQLOS}. Este
+Buffer Pool crece y se reduce automáticamente dentro de los límites definidos por
+\texttt{max server memory} y \texttt{min server memory}.
+
+El \textbf{Plan Cache} almacena los planes de ejecución compilados, equivalente
+al library cache del Shared Pool de Oracle. Una característica distintiva es
+\textbf{In-Memory OLTP}, que permite definir tablas
+completamente residentes en memoria con estructuras optimizadas para operaciones
+transaccionales de muy alta velocidad, sin necesidad de acceder a disco durante
+el procesamiento \citep{sqlserver_docs}.
+
+% ── 4.2 Gestión de procesos ──────────────────────────────────────────────────
+\section{Diferencias en la gestión de procesos}
+
+\subsection{Oracle Database}
+
+Oracle usa un modelo multi-proceso donde cada conexión puede tener su propio
+proceso servidor dedicado, y los procesos de background como DBWR, LGWR o SMON
+corren de forma independiente.
+
+\subsection{PostgreSQL}
+
+Sigue un modelo \textbf{multi-proceso puro}: por cada conexión que
+llega, el proceso maestro \textbf{postmaster} crea un proceso hijo independiente
+del sistema operativo llamado \textit{backend}. Esto significa que cien conexiones
+simultáneas implican cien procesos OS corriendo en paralelo.
+
+La ventaja de este modelo es el aislamiento, ya que un backend que falla no compromete
+a los demás. La desventaja es que crear y destruir procesos tiene un costo, y
+mantener muchos procesos simultáneos puede ser pesado en sistemas con miles de
+conexiones concurrentes.
+
+Los procesos auxiliares incluyen \textbf{bgwriter} (escribe páginas sucias al
+disco), \textbf{walwriter} (equivalente al LGWR de Oracle), \textbf{checkpointer},
+\textbf{autovacuum launcher} y sus workers, y el \textbf{stats collector}
+\citep{postgresql_docs}.
+
+\subsection{MySQL / InnoDB}
+
+Adopta un enfoque distinto: corre como un \textbf{único proceso}
+\texttt{mysqld} que maneja todas las conexiones mediante \textbf{threads internos}.
+Cada conexión recibe un thread, y existe un pool de threads opcional para
+reutilizarlos en lugar de crearlos y destruirlos constantemente.
+
+Los threads de background de InnoDB incluyen el \textbf{master thread} que
+coordina tareas de mantenimiento, los \textbf{I/O threads} para operaciones
+asíncronas de lectura y escritura, los \textbf{purge threads} que eliminan las
+versiones antiguas de filas ya no necesarias por el MVCC, y los
+\textbf{page cleaner threads} que escriben páginas sucias del buffer pool al
+disco \citep{mysql_docs}.
+
+\subsection{Microsoft SQL Server}
+
+También corre como un único proceso \texttt{sqlservr.exe} con múltiples
+threads internos, pero su arquitectura de scheduling es especial.
+\textbf{SQLOS} implementa un scheduler propio, lo que
+significa que los threads ceden el control voluntariamente en lugar de ser
+interrumpidos por el sistema operativo. Esto le da mayor control
+sobre la distribución de CPU.
+
+Los \textbf{worker threads} forman un pool que atiende las peticiones entrantes.
+Otros threads especializados incluyen el \textbf{Lazy Writer}, el \textbf{Log Writer} y el \textbf{Checkpoint} thread
+\citep{sqlserver_docs}.
+
+% ── 4.3 Archivos físicos ─────────────────────────────────────────────────────
+\section{Diferencias en la organización de archivos físicos}
+
+\subsection{Oracle Database}
+
+Oracle organiza sus archivos en datafiles \texttt{.dbf} agrupados en tablespaces,
+acompañados por los control files y los redo log files.
+
+\subsection{PostgreSQL}
+
+Todo el almacenamiento de PostgreSQL vive bajo un directorio raíz llamado
+\textbf{PGDATA}. Dentro de él, cada base de datos tiene su propio subdirectorio
+identificado por un OID numérico, y dentro de ese directorio cada tabla e índice
+es un archivo independiente, también identificado por su OID.
+
+Cuando una tabla crece más de 1 GB, PostgreSQL la divide automáticamente en
+segmentos del mismo tamaño. El \textbf{WAL} vive en el directorio
+\texttt{pg\_wal} y funciona como el redo log de Oracle. El directorio
+\texttt{pg\_xact} contiene el \textit{commit log} (CLOG), que registra el estado
+de cada transacción. Los tablespaces en PostgreSQL son simplemente directorios
+simbólicos en el sistema de archivos, más simples que en Oracle
+\citep{postgresql_docs}.
+
+\subsection{MySQL / InnoDB}
+
+Ofrece dos modalidades de almacenamiento. En la modalidad tradicional, todos
+los datos de InnoDB se guardan en un único archivo llamado \textbf{ibdata1}
+(\textit{system tablespace}). La modalidad recomendada actualmente es
+\texttt{innodb\_file\_per\_table}, donde cada tabla tiene su propio archivo
+\texttt{.ibd} que contiene tanto los datos como los índices de esa tabla \citep{mysql_docs}.
+
+\subsection{Microsoft SQL Server}
+
+Usa una estructura de archivos clara. El archivo \textbf{.mdf} es el
+archivo de datos primario de cada base de datos; si se necesita más espacio o
+distribuir la carga entre discos, se agregan archivos secundarios \textbf{.ndf}.
+El archivo \textbf{.ldf} contiene el log de transacciones.
+
+Los archivos de datos se agrupan en \textbf{filegroups}, que son la unidad lógica
+de almacenamiento equivalente a los tablespaces de Oracle. SQL Server también
+mantiene \textbf{TempDB}, una base de datos especial compartida por todas las
+bases del servidor para almacenamiento temporal, y soporta \textit{sparse files}
+para implementar snapshots de base de datos \citep{sqlserver_docs}.
+
+% ── 4.4 Manejo de logs ───────────────────────────────────────────────────────
+\section{Diferencias en el manejo de logs transaccionales}
+
+\subsection{Write-Ahead Logging (WAL) y Redo Log: principio común}
+
+Independientemente del nombre que cada motor le dé, todos los SGBD analizados
+comparten el mismo principio fundamental: los cambios se registran en un log
+\textit{antes} de aplicarse a los archivos de datos. Esto garantiza que ante
+una caída, el motor pueda reconstruir el estado correcto de la base de datos
+reproduciendo ese log. 
+
+\subsection{Comparativa por SGBD}
+
+\begin{table}[H]
+  \centering
+  \caption{Comparativa del mecanismo de logging transaccional}
+  \label{tab:logging}
+  \begin{tabular}{lp{2.8cm}p{2.8cm}p{2.8cm}p{2.8cm}}
+    \toprule
+    \textbf{Aspecto} & \textbf{Oracle} & \textbf{PostgreSQL} & \textbf{MySQL/InnoDB} & \textbf{SQL Server} \\
+    \midrule
+    Nombre del log       & Redo Log       & WAL (pg\_wal)      & InnoDB Redo Log       & Transaction Log (.ldf) \\
+    Proceso escritor     & LGWR           & walwriter          & Log writer thread     & Log Writer thread \\
+    Formato              & Circular (grupos) & Segmentos secuenciales & Circular (8.0+ dinámico) & VLF (Virtual Log Files) \\
+    Archivado            & ARCn (Archive Log Mode) & pg\_archiver / streaming replication & Binary Log (distinto) & Log Backup (FULL/BULK) \\
+    PITR                 & Sí (RMAN)      & Sí (pg\_basebackup + WAL) & Sí (binlog + backup) & Sí (backup + log) \\
+    \bottomrule
+  \end{tabular}
+  \\\small Fuente: Elaboración propia a partir de documentación oficial.
+\end{table}
+
+% ── 4.5 Tabla resumen comparativa
+
+\begin{landscape}
+\begin{table}[H]
+  \centering
+  \caption{Comparativa general de estructuras físicas e internas de los SGBD}
+  \label{tab:comparativa_general}
+  \small
+  \begin{tabular}{lp{3cm}p{3cm}p{3cm}p{3cm}}
+    \toprule
+    \textbf{Característica}      & \textbf{Oracle Database} & \textbf{PostgreSQL} & \textbf{MySQL (InnoDB)} & \textbf{SQL Server} \\
+    \midrule
+    \textbf{Arquitectura de memoria}
+      & SGA (compartida) + PGA (privada). AMM/ASMM.
+      & shared\_buffers + work\_mem. Delega en OS page cache.
+      & InnoDB Buffer Pool con instancias múltiples.
+      & Buffer Pool dinámico. SQLOS. In-Memory OLTP. \\[6pt]
+
+    \textbf{Modelo de procesos}
+      & Multi-proceso con procesos background dedicados.
+      & Multi-proceso (un proceso OS por conexión).
+      & Mono-proceso con threads internos.
+      & Mono-proceso (sqlservr.exe) con SQLOS y worker threads. \\[6pt]
+
+    \textbf{Archivos de datos}
+      & Datafiles (.dbf) agrupados en Tablespaces.
+      & Archivos por relación en PGDATA/base/OID.
+      & ibdata1 global o .ibd por tabla (file-per-table).
+      & .mdf (primario) + .ndf (secundarios) en Filegroups. \\[6pt]
+
+    \textbf{Log transaccional}
+      & Redo Log circular (grupos). LGWR. Archivado opcional.
+      & WAL (pg\_wal). walwriter. Archivado continuo.
+      & InnoDB Redo Log + Binary Log (separados).
+      & Transaction Log (.ldf) con VLF. \\[6pt]
+
+    \textbf{Control de concurrencia}
+      & MVCC con segmentos de Undo. Row-level locking.
+      & MVCC nativo. Sin undo log separado (tuplas versión en heap).
+      & MVCC con undo tablespaces. Gap locking en índices.
+      & Locking tradicional + MVCC vía versiones de fila (tempdb). \\[6pt]
+
+    \textbf{Organización interna}
+      & Bloques Oracle (2–32 KB). Segmentos/Extensiones.
+      & Páginas de 8 KB. TOAST para valores grandes.
+      & Páginas InnoDB de 16 KB. B+Tree clustered index.
+      & Páginas de 8 KB. Extents de 64 KB. Heap o clustered. \\
+    \bottomrule
+  \end{tabular}
+  \\\small Fuente: Elaboración propia a partir de documentación oficial de cada SGBD.
+\end{table}
+\end{landscape}
+
+\section{Ventajas y desventajas estructurales}
+
+\subsection{Oracle Database}
+
+La principal fortaleza de Oracle es su madurez arquitectónica. Décadas de
+desarrollo se reflejan en características como RAC (\textit{Real Application
+Clusters}) para clustering nativo, ASM (\textit{Automatic Storage Management})
+para gestión de almacenamiento, y un sistema de recuperación ante fallos robusto
+y bien documentado.
+
+Las desventajas son igualmente conocidas: el costo de licenciamiento es
+significativo y puede ser prohibitivo para organizaciones pequeñas, la
+administración requiere conocimientos especializados, y la instancia en sí
+consume recursos considerables incluso en reposo \citep{greenwald_oracle}.
+
+\subsection{PostgreSQL}
+
+Destaca por ser software libre con un modelo de MVCC arquitectónicamente
+limpio: en lugar de un segmento de undo separado, almacena las versiones anteriores
+de las filas directamente en el heap de la tabla, lo que simplifica el diseño
+interno.
+
+Su mayor limitante estructural es el modelo de un proceso por conexión, que puede
+saturar el sistema operativo ante muchas conexiones simultáneas \citep{postgresql_docs}.
+
+\subsection{MySQL / InnoDB}
+
+Construyó su reputación en el ecosistema web gracias a su rendimiento en
+lecturas y su facilidad de configuración. 
+
+Sin embargo, su historia de múltiples motores de almacenamiento intercambiables
+dejó inconsistencias que persisten hoy. Su conformidad con el estándar SQL tiene
+limitaciones históricas, y el \textit{gap locking} de InnoDB puede generar bloqueos inesperados
+si no se conoce bien \citep{mysql_docs}.
+
+\subsection{Microsoft SQL Server}
+
+SQL Server sobresale en entornos corporativos donde el ecosistema Microsoft es
+predominante. Su integración con herramientas de BI como SSRS, SSIS y SSAS, junto
+con características como In-Memory OLTP para cargas transaccionales extremas, lo
+hacen muy completo.
+
+Sus desventajas son el costo de licenciamiento, comparable al de Oracle en ediciones
+Enterprise, y aunque existe una versión para Linux, históricamente ha sido una
+plataforma predominantemente Windows, lo que limita su adopción en entornos donde
+Linux es el estándar \citep{sqlserver_docs}.
+\clearpage

@@ -1,0 +1,46 @@
+% ============================================================
+%  TEMA 2 — Relación entre la ampliación de memoria y la
+%           implementación del modelo relacional
+% ============================================================
+\chapter{Relación entre el avance del hardware y la implementación del modelo relacional}
+
+\section{Evolución de la memoria principal (RAM)}
+La capacidad de procesamiento de los SGBD ha estado limitada históricamente por la tecnología de memoria disponible \parencite{hennessy_patterson_2017,patterson2011}. 
+\begin{itemize}
+    \item \textbf{Décadas 1960--1970:} La memoria predominante era de núcleos de ferrita, con capacidades medidas en Kilobytes (KB) y costos altísimos \parencite{hennessy_patterson_2017}. Esta escasez obligaba a los sistemas a depender de estructuras físicas rígidas (como el modelo jerárquico) para minimizar el uso de RAM.
+    \item \textbf{Chips DRAM y el Intel 1103:} En los años 70, la aparición de los chips DRAM permitió mayor densidad a menor costo \parencite{moore1965}.
+    \item \textbf{Crecimiento Exponencial:} La transición de capacidades de 1 MB en los 80 a decenas de GB en servidores modernos permitió que los SGBD pasaran de ser meros "archiveros" a motores de procesamiento en tiempo real con grandes áreas de memoria compartida (SGA) \parencite{hennessy_patterson_2017}.
+\end{itemize}
+
+\section{Evolución del almacenamiento secundario}
+El diseño de las estructuras internas (como los \textit{datafiles} de Oracle) ha evolucionado junto con los dispositivos de almacenamiento físico \parencite{oracle_concepts_19c}.
+\begin{itemize}
+    \item \textbf{Hitos Históricos:} Desde el \textbf{IBM RAMAC (1956)}, que almacenaba 5 MB en un dispositivo del tamaño de una heladera \parencite{moore1965}, hasta los HDD modernos de alta velocidad de rotación.
+    \item \textbf{Impacto de los SSD:} El paso a la tecnología flash NAND (SSD) ha reducido drásticamente la latencia y aumentado las IOPS (operaciones de entrada/salida por segundo), lo que beneficia directamente la escritura de los \textit{redo logs} y la integridad del sistema \parencite{stonebraker_cattell_2011}.
+    \item \textbf{Arquitecturas SAN/NAS:} El almacenamiento en red ha permitido separar el procesamiento de los datos, facilitando entornos de alta disponibilidad y escalabilidad en Oracle \parencite{oracle_admin_19c}.
+\end{itemize}
+
+\section{Cómo el aumento de memoria habilitó el modelo relacional}
+El modelo propuesto por Codd en 1970 no fue adoptado a grandes escalas hasta que el hardware lo permitió \parencite{codd_1970}.
+
+\subsection{Buffers más grandes}
+Un \textbf{buffer pool} de mayor tamaño permite mantener una mayor cantidad de datos en memoria RAM, reduciendo los accesos físicos al disco. Esto es esencial para el rendimiento de las consultas relacionales que requieren múltiples \textit{joins}, las cuales son computacionalmente costosas \parencite{silberschatz_2019,ramakrishnan_2003}.
+
+\subsection{Caché de datos y planes de consulta}
+La disponibilidad de memoria permitió la creación del \textbf{Shared Pool}. Aquí, los SGBD almacenan planes de ejecución ya calculados, evitando que el sistema deba procesar la lógica de una consulta SQL cada vez que se ejecuta, ahorrando ciclos de CPU críticos \parencite{oracle_concepts_19c}.
+
+\subsection{Optimización de consultas}
+Con más RAM, los optimizadores pueden realizar operaciones de \textbf{hash joins} y \textbf{sort-merge joins} directamente en memoria (PGA), evitando el uso de archivos temporales en disco que degradan el rendimiento \parencite{ramakrishnan_2003,silberschatz_2019}.
+
+\subsection{Índices más complejos}
+Los índices B-Tree o Bitmap, fundamentales para la velocidad del modelo relacional, requieren estructuras que deben cargarse en memoria para ser eficientes \parencite{silberschatz_2019}. El crecimiento del hardware permitió índices más densos y búsquedas casi instantáneas.
+
+\section{Relación entre costo del hardware y masificación de los SGBD}
+La adopción masiva de los SGBD relacionales siguió la \textbf{Ley de Moore} \parencite{moore1965}. En los años 70, Oracle no era viable para la mayoría de las empresas debido al costo prohibitivo de la RAM necesaria para sus procesos de fondo (como DBWR o LGWR) \parencite{oracle_concepts_19c}. El punto de inflexión ocurrió en los años 80, cuando el hardware se abarató lo suficiente para democratizar el uso de servidores relacionales, pasando de grandes \textit{mainframes} a computadoras más accesibles \parencite{hennessy_patterson_2017}.
+
+\section{Impacto en transacciones y control de concurrencia}
+La arquitectura física soporta los principios \textbf{ACID} \parencite{gray_reuter_1992,haerder1983}. 
+\begin{itemize}
+    \item \textbf{Control de Concurrencia:} Más RAM permite gestionar tablas de bloqueos más grandes y complejas en memoria, soportando a miles de usuarios simultáneos sin colapsar \parencite{gray_reuter_1992}.
+    \item \textbf{MVCC y Logs:} La velocidad de los discos modernos permite que los \textbf{Redo Logs} y \textbf{Undo Logs} se escriban con latencia mínima, garantizando la durabilidad y permitiendo que las lecturas no bloqueen a las escrituras \parencite{haerder1983}.
+\end{itemize}

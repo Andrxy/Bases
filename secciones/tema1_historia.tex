@@ -1,0 +1,33 @@
+% ============================================================
+%  TEMA 1 — Historia y desarrollo de las bases de datos
+%           hasta el modelo relacional
+% ============================================================
+\chapter{Historia y desarrollo de las bases de datos hasta el modelo relacional}
+
+\section{Sistemas de archivos tradicionales}
+
+Antes de los SGBD, los datos se gestionaban mediante archivos independientes procesados por aplicaciones específicas, lo que generaba \textbf{redundancia} (datos duplicados), \textbf{dependencia estructural} (los programas debían conocer la estructura física de los datos) e \textbf{inconsistencia} entre archivos \parencite{silberschatz_2019}. La ausencia de una capa centralizada dificultaba además el acceso concurrente y la seguridad.
+
+\section{Modelo jerárquico}
+
+Organiza los datos en una estructura de árbol con relaciones padre-hijo únicas. Su exponente más notable fue el \textbf{IBM IMS} (1966) \parencite{mcgee_1977}. Aunque ofrecía navegación rápida en rutas predefinidas, era rígido: las relaciones muchos-a-muchos no podían representarse de forma nativa.
+
+\section{Modelo en red (CODASYL)}
+
+Propuesto por el comité CODASYL a finales de los 60 \parencite{codasyl1971}, permitió que un registro hijo tuviera múltiples padres mediante estructuras de grafo. Su precursor fue el \textbf{IDS de Charles Bachman} \parencite{bachman_1973}. Más flexible que el modelo jerárquico, seguía dependiendo de punteros físicos que complejizaban el mantenimiento.
+
+\section{Problemas de redundancia y dependencia estructural}
+
+Ambos modelos compartían deficiencias críticas: la \textbf{dependencia estructural} obligaba a modificar las aplicaciones ante cualquier cambio en el almacenamiento, y la \textbf{redundancia} generaba anomalías al actualizar o eliminar datos \parencite{silberschatz_2019}. Esto evidenció la necesidad de una capa de abstracción que separara la visión lógica de la física.
+
+\section{La propuesta relacional de Edgar F. Codd}
+
+En 1970, Codd publicó \textit{``A Relational Model of Data for Large Shared Data Banks''} \parencite{codd_1970}, proponiendo gestionar datos mediante tablas con independencia lógica y física, apoyado en la \textbf{lógica de predicados} y el \textbf{álgebra relacional}. Sus \textbf{doce principios} establecieron el estándar para que un sistema fuera verdaderamente relacional \parencite{codd1982}, permitiendo al usuario enfocarse en \textit{qué} datos necesita y no en \textit{cómo} acceder a ellos.
+
+\section{SQL como lenguaje estándar}
+
+SQL nació en IBM entre 1974 y 1986 como lenguaje \textbf{declarativo} para consultas complejas \parencite{chamberlin1974sequel}. La estandarización \textbf{ANSI/ISO} de 1986 fue el factor clave que consolidó el modelo relacional en la industria.
+
+\section{Aparición de los primeros SGBD comerciales}
+
+Desde el prototipo \textbf{System R de IBM} \parencite{astrahan1976} surgieron los primeros productos comerciales: \textbf{Oracle V2} (1979) y \textbf{IBM DB2} (1983). Su adopción masiva estuvo condicionada por el hardware.

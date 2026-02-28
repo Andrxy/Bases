@@ -1,0 +1,108 @@
+% ============================================================
+%  Proyecto de Investigación I — EFI211
+%  Diseño e Implementación de Bases de Datos
+%  Universidad Nacional — Escuela de Informática
+%  I Ciclo 2026
+% ============================================================
+
+\documentclass[12pt, letterpaper]{report}
+
+% ── Codificación y fuentes ──────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{times}            % Times New Roman
+
+% ── Idioma ─────────────────────────────────────────────────
+\usepackage[spanish]{babel}
+
+% ── Márgenes (2.5 cm) ──────────────────────────────────────
+\usepackage[
+  top=2.5cm, bottom=2.5cm,
+  left=2.5cm, right=2.5cm
+]{geometry}
+
+% ── Interlineado 1.5 ───────────────────────────────────────
+\usepackage{setspace}
+\onehalfspacing
+
+% ── Gráficos, tablas y colores ─────────────────────────────
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{colortbl}
+
+% ── Hipervínculos y PDF ────────────────────────────────────
+\usepackage[
+  hidelinks,
+  pdftitle={PI1 — Evolución y Arquitectura de SGBD},
+  pdfauthor={Estudiante 1, Estudiante 2}
+]{hyperref}
+
+% ── Bibliografía APA 7 ─────────────────────────────────────
+\usepackage[
+  style=apa,
+  backend=biber,
+  natbib=true
+]{biblatex}
+\addbibresource{referencias.bib}
+
+% ── Encabezados y pies de página ───────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small PI1 — EFI211 — UNA}
+\fancyhead[R]{\small I Ciclo 2026}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Formato de títulos de capítulo ─────────────────────────
+\usepackage{titlesec}
+\titleformat{\chapter}[block]
+  {\normalfont\LARGE\bfseries}{\thechapter.}{1em}{}
+\titlespacing*{\chapter}{0pt}{0pt}{20pt}
+
+% ── Código fuente (si se necesita) ─────────────────────────
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single
+}
+
+% ── Otros paquetes útiles ──────────────────────────────────
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{pdflscape}         % páginas en horizontal para tablas anchas
+
+% ============================================================
+\begin{document}
+
+% ── Portada ────────────────────────────────────────────────
+\input{secciones/portada}
+
+% ── Páginas preliminares (numeración romana) ────────────────
+\pagenumbering{roman}
+\input{secciones/resumen}
+\clearpage
+
+% ── Cuerpo principal (numeración arábiga) ──────────────────
+\pagenumbering{arabic}
+\input{secciones/introduccion}
+\input{secciones/marco_teorico}
+\input{secciones/tema1_historia}
+\input{secciones/tema2_hardware}
+\input{secciones/tema3_oracle}
+\input{secciones/tema4_comparativa}
+\input{secciones/conclusiones}
+\input{secciones/recomendaciones}
+\input{secciones/uso_ia}
+
+% ── Bibliografía ───────────────────────────────────────────
+\printbibliography[title={Referencias bibliográficas}]
+\addcontentsline{toc}{chapter}{Referencias bibliográficas}
+
+\end{document}

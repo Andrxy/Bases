@@ -1,0 +1,28 @@
+% ============================================================
+%  RECOMENDACIONES
+% ============================================================
+\chapter{Recomendaciones}
+
+% TODO: Las recomendaciones deben ser prácticas y orientadas a:
+%   - Profesionales que diseñan sistemas de información.
+%   - Administradores de bases de datos.
+%   - Estudiantes que continúen investigando el tema.
+%   No deben ser repeticiones de las conclusiones.
+
+\section{Recomendaciones}
+
+\begin{enumerate}[leftmargin=*, label=\arabic*.]
+
+  \item \textbf{Antes de elegir un gestor, entender qué se necesita:} No es lo mismo un sistema para una tienda en línea que para un banco. Definir primero cuántos usuarios habrá, qué tan críticos son los datos y cuánto hay de presupuesto evita decisiones que después cuestan caro corregir.
+
+  \item \textbf{Gestión en Oracle:} Prioriza la gestión automática de memoria (AMM/ASMM) para que el sistema se autoajuste. Es vital duplicar archivos de control y logs en discos separados para evitar pérdidas de datos ante fallos físicos.
+
+  \item \textbf{No subestimar la importancia de los respaldos:} Independientemente del gestor que se use, tener una estrategia de respaldo bien definida es indispensable por si acaso sucede algo inesperado. La arquitectura interna puede ser muy robusta, pero si no hay copias de seguridad, un fallo puede ser catastrófico.
+
+  
+  \item \textbf{Conocer qué hacen los procesos de fondo antes de tocar configuraciones:}  Procesos como DBWR o LGWR en Oracle tienen comportamientos específicos que afectan directamente el rendimiento. Modificar parámetros sin entender qué hace cada proceso puede empeorar las cosas en lugar de mejorarlas.
+
+  \item \textbf{Separar los tablespaces según la naturaleza de los datos:} Tener tablespaces distintos para datos, índices, datos temporales y datos del sistema no es solo orden: facilita el monitoreo del espacio, el respaldo selectivo y la recuperación ante fallos parciales.
+
+\end{enumerate}
+\clearpage
