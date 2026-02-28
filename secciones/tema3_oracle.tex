@@ -6,270 +6,142 @@
 % ── 3.1 Arquitectura general ─────────────────────────────────────────────────
 \section{Arquitectura general de Oracle Database}
 
+\subsection{Distinción entre instancia y base de datos}
+
+Antes de hablar de procesos o memoria, hay una distinción fundamental en Oracle que conviene tener clara desde el inicio: la diferencia entre la \textbf{instancia} y la \textbf{base de datos}.
+
+La \textbf{base de datos} son los archivos en disco: datafiles, redo log files y control files. Existen independientemente de si Oracle está corriendo o no. La \textbf{instancia} es lo que ocurre en RAM cuando Oracle está activo: la SGA y los procesos en segundo plano. Es temporal; desaparece al apagar el servidor o ante una caída \parencite{oracle_concepts_19c}.
+
+Esta separación es lo que hace posible la recuperación. Ante una falla de energía, la instancia desaparece pero los archivos permanecen intactos. Al reiniciar, Oracle lee los archivos y reconstruye el estado correcto.
+
 \subsection{Arquitectura cliente-servidor}
 
-Oracle organiza la comunicación entre usuarios y base de datos separando dos
-roles claros. El \textbf{cliente} es la aplicación desde donde el usuario escribe
-sus consultas; el \textbf{servidor} es donde Oracle procesa todo y accede a los
-datos en disco. Esta separación garantiza que el cliente nunca manipule
-directamente los archivos de la base de datos, lo que mejora tanto la seguridad
-como la capacidad de atender múltiples usuarios simultáneamente.
+Oracle separa claramente el rol del cliente y el del servidor. El cliente es la aplicación desde donde el usuario escribe consultas; el servidor es donde Oracle las procesa y accede a los datos en disco. El cliente nunca manipula los archivos directamente.
 
-\subsubsection{El rol del Listener}
+Para gestionar las conexiones entrantes existe el \textbf{Oracle Net Listener}, un proceso que escucha peticiones de conexión y las redirige al proceso servidor correspondiente. Sin el Listener activo, ningún cliente puede conectarse.
 
-Para que esta comunicación funcione, Oracle utiliza el proceso
-\textbf{Oracle Net Listener}, que 'escucha' las conexiones entrantes. Cuando un cliente solicita conectarse, el Listener recibe la petición
-y la redirige al proceso servidor correspondiente. Sin el Listener activo, ningún
-cliente puede establecer conexión \citep{oracle_concepts_19c}.
+Una vez aceptada la conexión, Oracle puede atenderla en modo \textbf{servidor dedicado} (un proceso exclusivo por usuario, mejor rendimiento por sesión) o \textbf{servidor compartido} (un grupo de procesos atiende a muchos clientes de forma rotativa, más eficiente cuando hay muchas conexiones pero poca actividad continua) \parencite{oracle_concepts_19c}.
 
-\subsubsection{Servidor dedicado vs. servidor compartido}
+\subsection{Soporte multiusuario}
 
-Una vez aceptada la conexión, Oracle puede atenderla de dos formas. En el modo
-\textbf{servidor dedicado}, crea un proceso servidor exclusivo por cada usuario,
-lo que ofrece mejor rendimiento por sesión pero mayor consumo de recursos cuando
-hay muchas conexiones simultáneas. En el modo \textbf{servidor compartido}, un
-grupo reducido de procesos atiende a muchos clientes de forma rotativa, lo que
-es más eficiente en entornos con muchas conexiones pero poca actividad continua
-\citep{oracle_concepts_19c}.
+Oracle fue diseñado desde el inicio para soportar múltiples usuarios simultáneos. Cada conexión genera una sesión con su propio espacio de memoria privada en la PGA, donde se almacenan los cursores abiertos y los resultados intermedios. La actividad de un usuario no afecta la memoria de los demás.
 
-\subsubsection{La distinción entre instancia y base de datos}
-
-La \textbf{base de datos} es el conjunto de archivos físicos en disco:
-datafiles, redo log files y control file. Existen aunque Oracle no esté corriendo.
-La \textbf{instancia} es lo que ocurre en RAM: la SGA y los procesos en segundo
-plano. Es temporal; desaparece al apagar el servidor.
-
-Al iniciar Oracle, primero se levanta la instancia y luego se monta la base de
-datos leyendo el control file. Ante una falla de energía, la instancia desaparece
-pero los archivos en disco permanecen, permitiendo la recuperación al reiniciar
-\citep{oracle_concepts_19c}.
-
-\subsection{Arquitectura multiusuario}
-
-Oracle fue diseñado desde el inicio para soportar múltiples usuarios trabajando
-sobre la misma base de datos en simultáneo. Cada conexión genera una
-\textbf{sesión} con su propio espacio de memoria privada en la PGA, donde se
-almacenan los cursores abiertos, variables de sesión y resultados intermedios.
-La actividad de un usuario no afecta directamente la memoria de
-los demás, esto por ser privada.
-
-El mayor desafío del multiusuario es el acceso concurrente a los mismos datos.
-Oracle lo resuelve con bloqueos a nivel de fila y un modelo de consistencia de
-lectura basado en segmentos de undo, logrando que los lectores no bloqueen a los
-escritores y viceversa \citep{oracle_concepts_19c}.
+El mayor desafío del acceso concurrente es que múltiples usuarios pueden querer modificar el mismo dato al mismo tiempo. Oracle lo resuelve con bloqueos a nivel de fila y con un modelo de consistencia de lectura basado en segmentos de undo, de modo que los lectores no bloqueen a los escritores y viceversa \parencite{oracle_concepts_19c}.
 
 % ── 3.2 Procesos ─────────────────────────────────────────────────────────────
-\section{Gestión de procesos en Oracle}
-
-Cuando un usuario ejecuta una consulta, por detrás hay toda una serie de procesos
-trabajando de forma coordinada.
+\section{Gestión de procesos}
 
 \subsection{Procesos de usuario y procesos servidor}
 
-Al conectarse a Oracle, se generan dos procesos distintos. El \textbf{proceso de
-usuario} corre en la máquina del cliente y envía las instrucciones SQL. El
-\textbf{proceso servidor} corre en el servidor y ejecuta esas instrucciones
-accediendo a los datos. El cliente nunca toca los archivos directamente.
-
-El ciclo de vida es directo: el Listener acepta la conexión, se crea el proceso
-servidor, la sesión permanece activa mientras el usuario trabaja y al cerrar la
-conexión los recursos se liberan. Si la conexión cae abruptamente, PMON se encarga
-de limpiar lo que quedó pendiente \citep{oracle_concepts_19c}.
+Cuando un usuario se conecta a Oracle se generan dos procesos distintos. El \textbf{proceso de usuario} corre en la máquina del cliente y envía las instrucciones SQL. El \textbf{proceso servidor} corre en el servidor y las ejecuta, accediendo a los datos. El cliente nunca toca los archivos directamente.
 
 \subsection{Procesos en segundo plano}
 
-Estos procesos arrancan automáticamente al iniciar la instancia y trabajan de
-forma continua e independiente de los usuarios.
+Estos procesos arrancan automáticamente al iniciar la instancia y trabajan de forma continua, independiente de los usuarios. Son el motor real de la arquitectura.
 
 \subsubsection{DBWR — Database Writer}
 
-Escribe los bloques modificados (\textit{dirty blocks}) del buffer cache hacia
-los datafiles en disco de forma asíncrona, agrupando escrituras para no impactar
-el rendimiento. Se activa ante checkpoints, cuando el buffer acumula demasiados
-bloques sucios o cuando no hay espacio libre disponible \citep{oracle_concepts_19c}.
+Escribe los bloques modificados del buffer cache (los \textit{dirty blocks}) hacia los datafiles en disco, de forma asíncrona y agrupando escrituras para minimizar el impacto en rendimiento. Se activa ante checkpoints, cuando el buffer acumula demasiados bloques sucios, o cuando no hay espacio libre disponible \parencite{oracle_concepts_19c}.
 
 \subsubsection{LGWR — Log Writer}
 
-Escribe las entradas del redo log buffer hacia los redo log files en disco. El
-\texttt{COMMIT} de una transacción no se considera completo hasta que LGWR
-confirma esa escritura. Se activa
-en cada commit, cuando el buffer alcanza un tercio de su capacidad o cada tres
-segundos.
+Escribe las entradas del redo log buffer hacia los redo log files en disco. Este proceso es crítico: un \texttt{COMMIT} no se considera completo hasta que LGWR confirma esa escritura. Se activa en cada commit, cuando el buffer alcanza un tercio de su capacidad, o cada tres segundos.
 
 \subsubsection{SMON — System Monitor}
 
-Ejecuta la recuperación de instancia al arrancar Oracle tras una caída: aplica
-los redo logs para recuperar cambios perdidos y deshace transacciones no
-confirmadas. También libera segmentos temporales sin uso y consolida espacio
-libre fragmentado en los tablespaces \citep{oracle_concepts_19c}.
+Ejecuta la recuperación de instancia al arrancar Oracle tras una caída: aplica los redo logs para recuperar cambios perdidos y deshace las transacciones que no habían sido confirmadas. También libera segmentos temporales sin uso \parencite{oracle_concepts_19c}.
 
 \subsubsection{PMON — Process Monitor}
 
-Detecta procesos de usuario que fallaron o se desconectaron abruptamente y libera
-todo lo que dejaron pendiente: memoria, bloqueos sobre filas y transacciones
-incompletas. Sin PMON, una desconexión abrupta podría dejar filas bloqueadas
-indefinidamente \citep{loney_oracle_12c}.
+Detecta procesos de usuario que fallaron o se desconectaron abruptamente y libera todo lo que dejaron pendiente: memoria, bloqueos sobre filas, transacciones incompletas. Sin PMON, una desconexión abrupta podría dejar filas bloqueadas indefinidamente.
 
 \subsubsection{CKPT — Checkpoint Process}
 
-Registra en las cabeceras de los datafiles y en el control file la posición exacta
-hasta donde los cambios fueron escritos al disco. Gracias a esto, en una
-recuperación Oracle solo necesita aplicar los redo logs a partir del último
-checkpoint, reduciendo el tiempo de recuperación \citep{oracle_concepts_19c}.
+Registra en las cabeceras de los datafiles y en el control file la posición hasta donde los cambios fueron escritos a disco. En una recuperación, Oracle solo necesita aplicar los redo logs a partir del último checkpoint, lo que reduce significativamente el tiempo de recuperación \parencite{oracle_concepts_19c}.
 
 \subsubsection{ARCn — Archiver}
 
-En modo \textit{ARCHIVELOG}, copia cada redo log file lleno hacia un destino de
-archivo antes de que sea sobreescrito. Combinando un backup completo con los
-archived logs es posible restaurar la base de datos hasta cualquier punto en el
-tiempo, lo que lo hace indispensable para recuperación ante desastres.
+En modo \textit{ARCHIVELOG}, copia cada redo log file lleno hacia un destino de archivo antes de que sea sobreescrito. Combinando un backup completo con los archived logs es posible restaurar la base de datos hasta cualquier punto en el tiempo.
 
-\subsection{Manejo de concurrencia}
+\subsection{Manejo de concurrencia: MVCC}
 
-Oracle aplica \textbf{bloqueos a nivel de fila}: al modificar un registro, solo
-esa fila queda bloqueada, permitiendo que otros usuarios accedan al resto de la
-tabla sin esperas. Pero el mecanismo más importante es el \textbf{MVCC}
-(\textit{Multi-Version Concurrency Control}).
+Oracle utiliza \textbf{MVCC} (\textit{Multi-Version Concurrency Control}) para gestionar el acceso simultáneo. Cuando una consulta inicia, Oracle le asigna un \textbf{SCN} (\textit{System Change Number}) y garantiza que verá los datos tal como estaban en ese momento exacto. Si un bloque fue modificado por otra transacción, Oracle reconstruye su versión anterior usando los segmentos de undo.
 
-Cuando una consulta inicia, Oracle le asigna un \textbf{SCN} (\textit{System
-Change Number}) y garantiza que verá los datos como estaban en ese momento exacto.
-Si un bloque fue modificado por otra transacción, Oracle reconstruye su versión
-anterior usando los segmentos de undo. El resultado fundamental es que
-\textbf{los lectores no bloquean a los escritores y viceversa} \citep{oracle_concepts_19c}.
+El resultado es que \textbf{los lectores no bloquean a los escritores y viceversa}. Ambos pueden operar sobre los mismos datos de forma simultánea sin que uno espere al otro \parencite{oracle_concepts_19c}.
 
 % ── 3.3 Memoria ──────────────────────────────────────────────────────────────
-\section{Administración de memoria en Oracle}
+\section{Administración de memoria}
 
-Oracle divide su memoria en dos grandes áreas: la \textbf{SGA}, compartida por
-todos los procesos de la instancia, y la \textbf{PGA}, privada por cada proceso
-servidor.
+Oracle divide su memoria en dos grandes áreas: la \textbf{SGA}, compartida por todos los procesos, y la \textbf{PGA}, privada por cada proceso servidor.
 
 \subsection{SGA — System Global Area}
 
-La SGA se asigna al arrancar la instancia y la comparten todos los procesos en
-segundo plano y los procesos servidor. Oracle permite redistribuir
-memoria entre sus componentes automáticamente mediante AMM
-(\textit{Automatic Memory Management}) o ASMM
-(\textit{Automatic Shared Memory Management}) \citep{oracle_admin_19c}.
+Se asigna al arrancar la instancia. Oracle puede redistribuir memoria entre sus componentes automáticamente mediante AMM (\textit{Automatic Memory Management}) o ASMM (\textit{Automatic Shared Memory Management}) \parencite{oracle_admin_19c}.
 
 \subsubsection{Buffer Cache}
 
-Almacena copias de bloques de datos leídos desde disco. Cuando Oracle necesita
-un bloque, lo busca primero aquí; si no está, lo lee del disco y lo carga. Usa
-un algoritmo LRU para decidir qué bloques desalojar cuando necesita espacio. Es el componente con mayor impacto en la
-reducción de operaciones de entrada y salida \citep{oracle_concepts_19c}.
+Almacena copias de bloques de datos leídos desde disco. Cuando Oracle necesita un bloque, lo busca aquí primero. Si no está, lo lee del disco y lo carga. Usa un algoritmo LRU para decidir qué desalojar cuando necesita espacio. Es el componente con mayor impacto en la reducción de operaciones de entrada/salida \parencite{oracle_concepts_19c}.
 
 \subsubsection{Shared Pool}
 
-Contiene la \textbf{library cache}, que almacena planes de ejecución de consultas
-ya parseadas para reutilizarlos sin recompilar, y el \textbf{dictionary cache},
-que guarda metadatos del diccionario de datos como definiciones de tablas y
-permisos. Un Shared Pool bien dimensionado reduce significativamente el tiempo de
-procesamiento de consultas repetitivas \citep{oracle_concepts_19c}.
+Contiene la \textbf{library cache}, que almacena planes de ejecución ya compilados para reutilizarlos, y el \textbf{dictionary cache}, que guarda metadatos del diccionario de datos (definiciones de tablas, permisos, etc.). Un Shared Pool bien dimensionado reduce el tiempo de procesamiento de consultas repetitivas.
 
 \subsubsection{Redo Log Buffer}
 
-Buffer circular donde Oracle escribe las entradas de redo antes de que LGWR las
-vuelque al disco. Un buffer demasiado
-pequeño obliga a LGWR a escribir con mayor frecuencia, lo que puede convertirse
-en un cuello de botella en sistemas con alta actividad transaccional
-\citep{oracle_concepts_19c}.
+Buffer circular donde se escriben las entradas de redo antes de que LGWR las vuelque al disco. Un buffer demasiado pequeño obliga a LGWR a escribir con mayor frecuencia, lo que puede generar un cuello de botella en sistemas con alta actividad transaccional.
 
 \subsubsection{Large Pool}
 
-Área opcional para operaciones que requieren bloques grandes de memoria: backups
-con RMAN, operaciones en modo shared server y consultas paralelas. Separarlas del
-Shared Pool evita que lo fragmenten \citep{oracle_concepts_19c}.
+Área opcional para operaciones que requieren bloques grandes de memoria: backups con RMAN, operaciones en modo shared server y consultas paralelas. Mantenerlas separadas del Shared Pool evita que lo fragmenten.
 
 \subsection{PGA — Program Global Area}
 
-Es un área de memoria \textbf{privada} asignada individualmente a cada
-proceso servidor. Contiene el estado de los cursores abiertos, información de
-sesión y las \textit{SQL work areas}.
+Área de memoria \textbf{privada} asignada individualmente a cada proceso servidor. Contiene el estado de los cursores abiertos, información de sesión y las áreas de trabajo para ordenamientos y operaciones de hash.
 
-Si estas operaciones no caben en la PGA, Oracle las desborda al tablespace
-temporal en disco, impactando el rendimiento. A diferencia de la SGA, la PGA no se comparte: cada
-proceso tiene la suya propia y aislada \citep{oracle_concepts_19c}.
+Si esas operaciones no caben en la PGA, Oracle las desborda al tablespace temporal en disco, con el impacto en rendimiento que eso implica. A diferencia de la SGA, la PGA no se comparte: cada proceso tiene la suya y nadie más puede acceder a ella \parencite{oracle_concepts_19c}.
 
 % ── 3.4 Archivos físicos ─────────────────────────────────────────────────────
-\section{Organización de archivos físicos en Oracle}
+\section{Organización de archivos físicos}
 
 \subsection{Datafiles}
 
-Son los archivos donde Oracle almacena físicamente los datos de tablas, índices
-y demás objetos. Cada datafile pertenece a un único tablespace, pero un tablespace
-puede componerse de varios datafiles \citep{oracle_concepts_19c}.
+Son los archivos donde Oracle almacena físicamente los datos de tablas, índices y demás objetos. Cada datafile pertenece a un único tablespace, pero un tablespace puede estar compuesto por varios datafiles \parencite{oracle_concepts_19c}.
 
 \subsection{Control Files}
 
-Archivos pequeños pero críticos: contienen el nombre de la base de datos, el SCN
-actual, la ubicación de todos los datafiles y redo log files, y el historial de
-backups. Oracle no puede arrancar sin ellos. La práctica recomendada es la
-\textbf{multiplexación}: mantener copias idénticas en discos físicos distintos
-para protegerse ante fallos de hardware \citep{loney_oracle_12c}.
+Archivos pequeños pero críticos: contienen el nombre de la base de datos, el SCN actual, la ubicación de todos los datafiles y redo log files, y el historial de backups. Oracle no puede arrancar sin ellos. La práctica estándar es la \textbf{multiplexación}: mantener copias idénticas en discos físicos distintos para protegerse ante fallos de hardware \parencite{loney_oracle_12c}.
 
 \subsection{Redo Log Files}
 
-Registran todos los cambios realizados en la base de datos. Oracle los organiza
-en \textbf{grupos} que rota de forma circular: cuando un grupo se llena, ocurre
-un \textit{log switch} y Oracle pasa al siguiente. Con ese switch también se
-dispara un checkpoint \citep{oracle_concepts_19c}.
+Registran todos los cambios realizados en la base de datos. Oracle los organiza en grupos que rota de forma circular: cuando un grupo se llena ocurre un \textit{log switch} y Oracle pasa al siguiente. Con ese switch también se dispara un checkpoint.
 
-\subsection{Tablespaces}
+\subsection{Tablespaces, segmentos, extensiones y bloques}
 
-Son la unidad lógica de almacenamiento que agrupa datafiles. Oracle crea varios
-por defecto: \textbf{SYSTEM} y \textbf{SYSAUX} para el diccionario de datos y
-herramientas internas; \textbf{TEMP} para operaciones temporales; \textbf{UNDO}
-para los segmentos de undo; y \textbf{USERS} como espacio por defecto para objetos
-de usuario. Pueden ponerse offline, hacerse de solo lectura o volver en línea \citep{oracle_concepts_19c}.
+Los \textbf{tablespaces} son la unidad lógica de almacenamiento que agrupa datafiles. Oracle crea varios por defecto: SYSTEM y SYSAUX para el diccionario de datos; TEMP para operaciones temporales; UNDO para los segmentos de undo; y USERS como espacio por defecto para objetos de usuario.
 
-\subsection{Segmentos, extensiones y bloques}
-
-Oracle organiza el almacenamiento en una jerarquía de cuatro niveles. El
-\textbf{tablespace} contiene \textbf{segmentos}, que son el espacio asignado a
-un objeto concreto: puede ser de datos, de índice, temporal o de undo. Cada
-segmento crece mediante \textbf{extensiones}, conjuntos contiguos de bloques
-asignados dinámicamente cuando el segmento necesita más espacio \citep{oracle_concepts_19c}.
+Dentro de los tablespaces, el almacenamiento se organiza en \textbf{segmentos} (el espacio asignado a un objeto concreto), \textbf{extensiones} (conjuntos contiguos de bloques que se asignan dinámicamente cuando el segmento necesita crecer) y \textbf{bloques} (la unidad mínima de lectura y escritura) \parencite{oracle_concepts_19c}.
 
 % ── 3.5 ACID ─────────────────────────────────────────────────────────────────
 \section{Cómo la arquitectura física soporta las propiedades ACID}
 
-\subsection{Atomicidad y Durabilidad — el rol del Redo y Undo}
+\subsection{Atomicidad — segmentos de undo}
 
-Oracle garantiza la \textbf{atomicidad} mediante los segmentos de undo: antes de
-aplicar cualquier cambio guarda la versión anterior del dato. Si la transacción
-falla, usa esos datos para revertirlo todo como si nada hubiera ocurrido.
+Antes de aplicar cualquier cambio, Oracle guarda la versión anterior del dato en los segmentos de undo. Si la transacción falla, usa esos datos para revertirlo todo como si nada hubiera ocurrido.
 
-La \textbf{durabilidad} la garantiza el redo log: cada cambio se registra ahí
-antes de confirmarse. Si ocurre una caída justo después de un commit, al reiniciar
-Oracle aplica los redo logs y recupera esos cambios aunque nunca hayan llegado a
-los datafiles \citep{gray_reuter_1992}.
+\subsection{Durabilidad — redo log}
 
-\subsection{Consistencia — el rol de los segmentos de Undo y MVCC}
+Cada cambio se registra en el redo log antes de confirmarse. Si ocurre una caída justo después de un commit, al reiniciar Oracle aplica los redo logs y recupera esos cambios aunque nunca hayan llegado a los datafiles \parencite{gray_reuter_1992}.
 
-Cuando una consulta inicia, Oracle toma nota del SCN actual y garantiza que verá
-los datos como estaban en ese momento. Si durante la consulta otro proceso modificó
-un bloque, Oracle reconstruye la versión anterior usando los segmentos de undo.
-Cada lectura es consistente con un punto en el tiempo, sin importar la actividad
-concurrente \citep{oracle_concepts_19c}.
+\subsection{Consistencia — MVCC y undo}
+
+Cuando una consulta inicia, Oracle toma nota del SCN actual y garantiza que verá los datos tal como estaban en ese momento. Si durante la consulta otro proceso modificó un bloque, Oracle reconstruye la versión anterior usando los segmentos de undo. Cada lectura es consistente con un punto en el tiempo.
 
 \subsection{Aislamiento — locking y MVCC}
 
-Los escritores bloquean solo las filas que modifican, mientras que los lectores
-acceden a versiones anteriores reconstruidas desde el undo sin quedar bloqueados \citep{oracle_concepts_19c}.
+Los escritores bloquean solo las filas que modifican. Los lectores acceden a versiones anteriores reconstruidas desde el undo sin quedar bloqueados. Ambas operaciones pueden coexistir sin conflicto.
 
 \subsection{Recuperación ante fallos}
 
-Cuando Oracle arranca tras una caída, SMON ejecuta la recuperación de instancia
-en tres fases: primero aplica los redo logs para recuperar cambios en memoria
-(\textit{roll forward}), luego abre la base de datos, y finalmente deshace las
-transacciones no confirmadas usando los segmentos de undo (\textit{roll back}) \citep{oracle_concepts_19c}.
+Al arrancar tras una caída, SMON ejecuta la recuperación en tres fases: aplica los redo logs para recuperar cambios que estaban solo en memoria (\textit{roll forward}), abre la base de datos, y deshace las transacciones que no habían sido confirmadas (\textit{roll back}) \parencite{oracle_concepts_19c}.
 
-\subsection{Rendimiento}
-
-La arquitectura física de Oracle está diseñada para minimizar las operaciones de
-entrada y salida con disco. Un buffer cache grande mantiene más bloques en RAM. La
-escritura asíncrona de DBWR y el redo log buffer de LGWR agrupan las operaciones
-de escritura. Y la PGA permite que operaciones complejas se resuelvan en memoria
-antes de recurrir al tablespace temporal \citep{oracle_concepts_19c}.
 \clearpage

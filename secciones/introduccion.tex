@@ -5,19 +5,21 @@
 
 \section{Contexto y motivación}
 
-Hoy casi cualquier sistema de información depende de una base de datos, pero es fácil usarlas sin entender cómo funcionan por dentro. Saber qué ocurre exactamente cuando se ejecuta un \texttt{COMMIT}, quién escribe los datos al disco o qué pasa ante una falla de energía no suele cubrirse en cursos introductorios. Esta investigación parte de esa curiosidad: no solo describir los sistemas, sino entender por qué están diseñados como están, algo que requirió ir hacia atrás y revisar el contexto histórico y de hardware en que surgieron.
+Las bases de datos están en todas partes, pero es perfectamente posible usarlas durante años sin entender bien cómo funcionan por dentro. Cuando se ejecuta un \texttt{COMMIT}, algo pasa: alguien escribe en disco, alguien libera bloqueos, alguien garantiza que esos cambios sobrevivan a un corte de luz. Ese ``alguien'' es la arquitectura interna del gestor, y entenderla es el propósito de este trabajo.
+
+Para entender cómo están diseñados estos sistemas hoy, hay que saber por qué tomaron las decisiones que tomaron. Y muchas de esas decisiones tienen una explicación histórica y técnica que empieza mucho antes de que existiera Oracle o PostgreSQL.
 
 \section{Planteamiento del problema}
 
-La pregunta central es: \textit{¿cómo condicionó la evolución del hardware la adopción masiva del modelo relacional, y cómo se refleja eso en la arquitectura física de los SGBD actuales?}
+La pregunta que guía esta investigación es: \textit{¿cómo condicionó la evolución del hardware la adopción del modelo relacional, y cómo se refleja eso en la arquitectura de los gestores actuales?}
 
-Codd publicó su propuesta en 1970 pero durante más de una década fue considerada demasiado costosa para uso práctico. La razón es concreta: el modelo relacional exige operaciones intensivas en memoria, y en los años 70 esa memoria era escasa y cara. Cada componente de la arquitectura de un SGBD moderno existe, en parte, como respuesta a esa limitación histórica.
+Codd publicó su modelo en 1970, pero durante más de una década no fue adoptado masivamente. La razón no fue teórica: el modelo relacional exige operaciones intensivas en memoria, y en los años 70 esa memoria era cara y escasa. Cada componente de un gestor moderno, el buffer cache, el redo log, la PGA, existe como respuesta concreta a ese problema.
 
 \section{Alcances y limitaciones}
 
-El análisis cubre Oracle, PostgreSQL, MySQL con InnoDB y SQL Server, enfocándose en arquitectura de memoria, procesos, archivos físicos y logging transaccional. No se realizaron pruebas empíricas de rendimiento ni instalaciones reales; el trabajo es documental y comparativo.
+Este trabajo es documental y comparativo. Se analiza la arquitectura de Oracle, PostgreSQL, MySQL con InnoDB y SQL Server, con foco en memoria, procesos, archivos físicos y logging transaccional. No se realizaron pruebas de rendimiento ni instalaciones reales.
 
 \section{Estructura del documento}
 
-El \textbf{Capítulo 2} establece el marco teórico. El \textbf{Capítulo 3} recorre la historia desde los archivos planos hasta los primeros SGBD comerciales. El \textbf{Capítulo 4} analiza cómo el hardware hizo viable el modelo relacional. El \textbf{Capítulo 5} describe la arquitectura física de Oracle. El \textbf{Capítulo 6} presenta la comparativa entre los cuatro motores. Finalmente se presentan conclusiones y recomendaciones.
+El \textbf{Capítulo 2} presenta el marco teórico. El \textbf{Capítulo 3} cubre la historia desde los archivos planos hasta los primeros gestores comerciales. El \textbf{Capítulo 4} explica cómo el hardware hizo viable el modelo relacional. El \textbf{Capítulo 5} describe la arquitectura física de Oracle. El \textbf{Capítulo 6} compara los cuatro motores. Al final se presentan conclusiones y recomendaciones.
 \clearpage

@@ -4,11 +4,12 @@
 \chapter*{Resumen ejecutivo}
 \addcontentsline{toc}{chapter}{Resumen ejecutivo}
 
-Este trabajo examina cómo la evolución del hardware condicionó la adopción masiva de los sistemas gestores de bases de datos relacionales, con énfasis en la arquitectura de Oracle Database y su comparación con PostgreSQL, MySQL (InnoDB) y Microsoft SQL Server. La demora en la adopción del modelo relacional de Codd respondió menos a limitaciones teóricas que a restricciones concretas de memoria y procesamiento: la RAM era escasa y cara, y el modelo relacional la necesitaba. Cuando el hardware maduró, el modelo se impuso con rapidez.
+Este trabajo analiza cómo la evolución del hardware condicionó la adopción de los gestores de bases de datos relacionales, con énfasis en la arquitectura de Oracle Database y su comparación con PostgreSQL, MySQL (InnoDB) y Microsoft SQL Server.
 
-El análisis describe la arquitectura interna de Oracle (memoria, procesos en segundo plano, archivos físicos y mecanismos ACID) y contrasta sus decisiones de diseño con las de los otros tres motores. La conclusión no es que haya un sistema superior, sino que cada uno resolvió los mismos problemas desde filosofías distintas, con ventajas y costos propios. El trabajo se basa en documentación oficial y bibliografía académica, no incluye pruebas empíricas de rendimiento.
+El modelo relacional de Codd tardó más de una década en adoptarse masivamente, y la razón fue concreta: la RAM era cara y escasa, y el modelo la necesitaba. Cuando el hardware maduró, el modelo se impuso rápidamente.
+
+El trabajo describe la arquitectura interna de Oracle (memoria, procesos en segundo plano, archivos físicos y mecanismos ACID) y contrasta sus decisiones de diseño con las de los otros tres motores. La conclusión principal no es que haya un gestor superior a los demás, sino que cada uno resolvió los mismos problemas desde enfoques distintos, con ventajas y costos propios.
 
 \bigskip
-\noindent\textbf{Palabras clave:} bases de datos relacionales, Oracle Database,
-arquitectura SGBD, memoria RAM, PostgreSQL, MySQL, SQL Server, Edgar F. Codd.
+\noindent\textbf{Palabras clave:} bases de datos relacionales, Oracle Database, arquitectura SGBD, PostgreSQL, MySQL, SQL Server, Edgar F. Codd.
 \clearpage

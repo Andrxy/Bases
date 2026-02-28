@@ -6,28 +6,36 @@
 
 \section{Sistemas de archivos tradicionales}
 
-Antes de los SGBD, los datos se gestionaban mediante archivos independientes procesados por aplicaciones específicas, lo que generaba \textbf{redundancia} (datos duplicados), \textbf{dependencia estructural} (los programas debían conocer la estructura física de los datos) e \textbf{inconsistencia} entre archivos \parencite{silberschatz_2019}. La ausencia de una capa centralizada dificultaba además el acceso concurrente y la seguridad.
+Antes de que existieran los SGBD, los datos se gestionaban con archivos independientes procesados por aplicaciones específicas. Cada programa conocía la estructura exacta de sus archivos y los manipulaba directamente. Esto funcionaba mientras las aplicaciones eran pocas y simples, pero escalaba muy mal.
+
+Los problemas eran predecibles: datos duplicados en múltiples archivos que se desincronizaban, programas que dejaban de funcionar cuando se cambiaba la estructura de un archivo, y ningún mecanismo real para que dos usuarios accedieran al mismo dato al mismo tiempo sin pisarse \parencite{silberschatz_2019}. No había una capa central que organizara nada.
 
 \section{Modelo jerárquico}
 
-Organiza los datos en una estructura de árbol con relaciones padre-hijo únicas. Su exponente más notable fue el \textbf{IBM IMS} (1966) \parencite{mcgee_1977}. Aunque ofrecía navegación rápida en rutas predefinidas, era rígido: las relaciones muchos-a-muchos no podían representarse de forma nativa.
+La primera solución estructurada fue organizar los datos como un árbol: registros padre con registros hijo. El ejemplo más conocido es el \textbf{IBM IMS}, desarrollado en los años 60 para la NASA y adoptado ampliamente en la industria \parencite{mcgee_1977}.
+
+Funcionaba bien para datos que naturalmente tienen esa estructura, como una orden de compra con sus líneas de detalle. El problema era cuando la realidad no encajaba en un árbol. Las relaciones muchos-a-muchos no se podían representar de forma directa, y navegar el modelo requería conocer exactamente la jerarquía predefinida.
 
 \section{Modelo en red (CODASYL)}
 
-Propuesto por el comité CODASYL a finales de los 60 \parencite{codasyl1971}, permitió que un registro hijo tuviera múltiples padres mediante estructuras de grafo. Su precursor fue el \textbf{IDS de Charles Bachman}. Más flexible que el modelo jerárquico, seguía dependiendo de punteros físicos que complejizaban el mantenimiento.
+El modelo en red, formalizado por el comité CODASYL a finales de los 60 \parencite{codasyl1971}, intentó resolver esa limitación. En lugar de un árbol, los datos se organizaban como un grafo: un registro podía tener múltiples padres. El diseñador detrás del concepto fue Charles Bachman con su sistema IDS.
 
-\section{Problemas de redundancia y dependencia estructural}
+Era más flexible que el modelo jerárquico, pero seguía dependiendo de punteros físicos entre registros. Para consultar datos había que navegar manualmente esos punteros en el código de la aplicación. Un cambio en la estructura física del modelo obligaba a reescribir los programas.
 
-Ambos modelos compartían deficiencias críticas: la \textbf{dependencia estructural} obligaba a modificar las aplicaciones ante cualquier cambio en el almacenamiento, y la \textbf{redundancia} generaba anomalías al actualizar o eliminar datos \parencite{silberschatz_2019}. Esto evidenció la necesidad de una capa de abstracción que separara la visión lógica de la física.
+\section{Problemas compartidos de ambos modelos}
+
+Tanto el modelo jerárquico como el en red tenían el mismo defecto fundamental: la \textbf{dependencia estructural}. Los programas estaban acoplados a la organización física de los datos. Si se quería reorganizar cómo se almacenaba algo, había que modificar todas las aplicaciones que lo usaban. Y la redundancia de datos seguía siendo un problema porque no había un mecanismo central que la controlara \parencite{silberschatz_2019}.
 
 \section{La propuesta relacional de Edgar F. Codd}
 
-En 1970, Codd publicó \textit{``A Relational Model of Data for Large Shared Data Banks''} \parencite{codd_1970}, proponiendo gestionar datos mediante tablas con independencia lógica y física, apoyado en la \textbf{lógica de predicados} y el \textbf{álgebra relacional}. Sus \textbf{doce principios} establecieron el estándar para que un sistema fuera verdaderamente relacional \parencite{codd1982}, permitiendo al usuario enfocarse en \textit{qué} datos necesita y no en \textit{cómo} acceder a ellos.
+En 1970, Edgar F. Codd, investigador de IBM, publicó el artículo \textit{``A Relational Model of Data for Large Shared Data Banks''} \parencite{codd_1970}. La propuesta era organizar los datos en tablas y permitir consultarlos con un lenguaje declarativo basado en álgebra relacional.
+
+Lo más importante no era la estructura tabular en sí, sino la separación entre lo lógico y lo físico. El usuario o programador describe qué datos quiere, no cómo ir a buscarlos. El sistema se encarga del resto. Eso elimina de raíz la dependencia estructural que hacía tan frágiles a los modelos anteriores.
 
 \section{SQL como lenguaje estándar}
 
-SQL nació en IBM entre 1974 y 1986 como lenguaje \textbf{declarativo} para consultas complejas \parencite{chamberlin1974sequel}. La estandarización \textbf{ANSI/ISO} de 1986 fue el factor clave que consolidó el modelo relacional en la industria.
+El lenguaje que hizo operativa la propuesta de Codd fue SQL, desarrollado originalmente en IBM bajo el nombre SEQUEL \parencite{chamberlin1974sequel}. Su estandarización por ANSI/ISO en 1986 fue el factor que consolidó el modelo relacional en la industria: ya no importaba qué gestor usaras, el mismo SQL servía en todos.
 
 \section{Aparición de los primeros SGBD comerciales}
 
-Desde el prototipo \textbf{System R de IBM} \parencite{astrahan1976} surgieron los primeros productos comerciales: \textbf{Oracle V2} (1979) y \textbf{IBM DB2} (1983). Su adopción masiva estuvo condicionada por el hardware.
+El primer sistema relacional de investigación fue \textbf{System R} de IBM \parencite{astrahan1976}, que demostró que el modelo era implementable en la práctica. A partir de ahí llegaron los productos comerciales: \textbf{Oracle V2} en 1979 y \textbf{IBM DB2} en 1983. La adopción masiva de ambos, sin embargo, tuvo que esperar a que el hardware se pusiera al día.

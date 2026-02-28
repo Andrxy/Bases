@@ -5,15 +5,17 @@
 
 \section{Definición de base de datos y SGBD}
 
-Una base de datos es una colección organizada de datos que representa aspectos del mundo real, mientras que un SGBD es el software que permite su creación, mantenimiento y control de acceso, actuando como capa intermedia entre el usuario y los archivos físicos. Distintos autores enfatizan aspectos diferentes: \textcite{silberschatz_2019} subrayan la relación entre los datos y los programas que los gestionan; \textcite{elmasri_2016} destacan que esa colección modela algo externo y concreto. La distinción que más importa para este trabajo es la de \textcite{codd_1970}: separar la visión lógica de los datos de cómo están físicamente almacenados. Esa independencia fue la ruptura central que hizo posible el modelo relacional.
+Una base de datos es una colección organizada de datos que representa aspectos del mundo real. Un SGBD es el software que permite crear, mantener y controlar el acceso a esos datos, actuando como intermediario entre el usuario y los archivos físicos en disco.
+
+La distinción más relevante para este trabajo viene de \textcite{codd_1970}: separar la visión lógica de los datos de cómo están físicamente almacenados. Esa independencia fue la ruptura central que hizo posible el modelo relacional y es lo que diferencia un SGBD moderno de un simple sistema de archivos.
 
 \section{Modelo relacional}
 
-La propuesta de \textcite{codd_1970} organizó los datos en \textbf{relaciones} (tablas), \textbf{tuplas} (filas) y \textbf{atributos} (columnas), apoyada en álgebra relacional y lógica de predicados. Lo que la distinguió de los modelos anteriores no fue solo la estructura tabular, sino la garantía de independencia física: la misma consulta funcionaba sin importar cómo estuvieran organizados los datos en disco. Posteriormente, \textcite{codd1982} formalizó los criterios que un sistema debe cumplir para considerarse verdaderamente relacional.
+La propuesta de \textcite{codd_1970} organizó los datos en \textbf{relaciones} (tablas), \textbf{tuplas} (filas) y \textbf{atributos} (columnas), apoyada en álgebra relacional. Lo que la distinguió de los modelos anteriores no fue solo la estructura tabular, sino la independencia física: la misma consulta funcionaba sin importar cómo estuvieran organizados los datos en disco. El usuario no necesitaba saber nada de la implementación interna.
 
 \section{Propiedades ACID}
 
-Formalizadas por \textcite{haerder1983}, las propiedades ACID definen qué significa que una transacción sea confiable:
+Las propiedades ACID definen qué significa que una transacción sea confiable \parencite{haerder1983}:
 
 \begin{itemize}
     \item \textbf{Atomicidad:} la transacción se ejecuta completa o no se ejecuta.
@@ -22,12 +24,14 @@ Formalizadas por \textcite{haerder1983}, las propiedades ACID definen qué signi
     \item \textbf{Durabilidad:} los efectos de una transacción confirmada persisten ante fallos.
 \end{itemize}
 
-\section{Arquitectura cliente-servidor en bases de datos}
+Estas cuatro propiedades no son solo conceptos teóricos: cada componente físico de la arquitectura de un SGBD existe, en parte, para implementarlas.
 
-La separación entre cliente y servidor permite que múltiples usuarios trabajen simultáneamente sobre la misma base de datos. Oracle añade una distinción importante: la \textbf{instancia} (memoria y procesos, temporal) versus la \textbf{base de datos} (archivos en disco, persistente). Ante una falla, la instancia desaparece pero los archivos permanecen, lo que hace posible la recuperación.
+\section{Arquitectura cliente-servidor}
 
-\section{Conceptos de memoria y almacenamiento relevantes}
+La separación entre cliente y servidor permite que múltiples usuarios trabajen simultáneamente sobre la misma base de datos. Oracle añade una distinción importante: la \textbf{instancia} (memoria y procesos, temporal) frente a la \textbf{base de datos} (archivos en disco, persistente). Ante una falla, la instancia desaparece pero los archivos permanecen, y eso es lo que hace posible la recuperación.
 
-El rendimiento de un SGBD depende de cuánto puede mantener en RAM y cuánto debe ir a buscar al disco. La \textbf{memoria RAM} permite sostener buffers que reducen los accesos físicos; en Oracle, el componente principal es el \textit{Buffer Cache} dentro de la SGA. El \textbf{almacenamiento secundario} (HDD o SSD) aloja los datos de forma permanente. La diferencia de velocidad entre ambos, varios órdenes de magnitud, explica por qué el dimensionamiento del buffer cache es una de las decisiones más críticas en la administración de cualquier motor.
+\section{Memoria y almacenamiento}
+
+El rendimiento de un SGBD depende en gran medida de cuánto puede mantener en RAM y cuánto debe ir a buscar al disco. La diferencia de velocidad entre ambos es de varios órdenes de magnitud, y eso explica por qué el dimensionamiento del buffer cache es una de las decisiones más críticas en la administración de cualquier motor.
 
 \clearpage

@@ -4,42 +4,53 @@
 % ============================================================
 \chapter{Relación entre el avance del hardware y la implementación del modelo relacional}
 
-\section{Evolución de la memoria principal (RAM)}
+\section{La memoria como cuello de botella}
 
-La capacidad de los SGBD ha estado limitada históricamente por la memoria disponible \parencite{hen}. En las décadas de 1960 y 1970, la memoria predominante era de núcleos de ferrita, con capacidades medidas en kilobytes y costos que hacían inviable cualquier sistema que la consumiera en grandes cantidades. Esto obligaba a los modelos de datos de la época a ser rígidos y dependientes de estructuras físicas predefinidas, simplemente porque no había margen para operaciones dinámicas costosas en memoria.
+El modelo relacional de Codd era teóricamente correcto desde 1970. El problema no era la teoría sino el costo de ejecutarla. Las operaciones que requiere el modelo relacional, joins entre tablas, ordenamientos, índices dinámicos, son intensivas en memoria. Y en los años 70, la memoria principal era de núcleos de ferrita, carísima y medida en kilobytes.
 
-El panorama comenzó a cambiar con la aparición de los chips DRAM, que permitieron mayor densidad a menor costo. La transición de capacidades de 1 MB en los años 80 a los gigabytes disponibles en servidores modernos fue lo que permitió que los SGBD dejaran de ser simples archiveros y pasaran a ser motores de procesamiento con grandes áreas de memoria compartida como la SGA de Oracle \parencite{hennessy_patterson_2017}.
+En ese contexto, un sistema que necesitara mantener grandes estructuras en RAM para funcionar correctamente simplemente no era viable para la mayoría de las organizaciones. Los modelos jerárquico y en red, con sus punteros físicos predefinidos, consumían mucho menos memoria porque no necesitaban razonar sobre los datos: simplemente los seguían.
+
+\section{Evolución de la memoria principal}
+
+La transición llegó con los chips DRAM, que permitieron mayor densidad a menor costo. Pasar de kilobytes en los años 70 a megabytes en los 80 y luego a gigabytes en los servidores modernos cambió completamente lo que era posible hacer en un SGBD \parencite{hennessy_patterson_2017}.
+
+Esa memoria adicional es lo que permitió construir componentes como el buffer cache de Oracle o el \texttt{shared\_buffers} de PostgreSQL: áreas grandes en RAM donde los datos más usados viven sin tener que ir al disco en cada consulta. Sin esa memoria disponible, esos componentes no tienen sentido.
 
 \section{Evolución del almacenamiento secundario}
 
-El almacenamiento secundario tuvo su propia evolución, igualmente relevante para entender por qué los SGBD están diseñados como están \parencite{oracle_concepts_19c}. El IBM RAMAC de 1956 almacenaba apenas 5 MB en un dispositivo del tamaño de una heladera. Hoy eso parece absurdo, pero en ese contexto diseñar estructuras de archivos eficientes no era una opción sino una necesidad de supervivencia del sistema.
+El almacenamiento también evolucionó, aunque por razones distintas. El IBM RAMAC de 1956 almacenaba 5 MB en un dispositivo del tamaño de una heladera. Hoy los terabytes son comunes y económicos, pero más relevante que la capacidad fue la reducción de latencia.
 
-El salto más significativo en tiempos recientes fue la adopción de SSD. Reducir la latencia de acceso al disco impacta directamente en componentes como los \textit{redo logs}, donde la velocidad de escritura es crítica para no convertirse en un cuello de botella transaccional \parencite{stonebraker_cattell_2011}. Las arquitecturas SAN y NAS, por su parte, permitieron separar el almacenamiento del procesamiento, algo que Oracle aprovecha para sus configuraciones de alta disponibilidad \parencite{oracle_admin_19c}.
+El salto de HDD a SSD impactó directamente componentes como los redo logs, donde la velocidad de escritura es crítica. Si escribir al log se convierte en un cuello de botella, todas las transacciones esperan. Con SSD, ese problema se redujo significativamente \parencite{oracle_admin_19c}.
 
-\section{Cómo el aumento de memoria habilitó el modelo relacional}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{img/fig2_hardware}
+  \caption{Relación entre el crecimiento de la RAM disponible y la adopción del modelo relacional (estimación ilustrativa).}
+  \label{fig:hardware}
+\end{figure}
 
-El modelo propuesto por \textcite{codd_1970} no fue adoptado masivamente hasta que el hardware lo permitió, y la razón es bastante directa: las operaciones que el modelo relacional requiere son caras en memoria.
+\section{Cómo el hardware habilitó el modelo relacional}
 
 \subsection{Buffers más grandes}
 
-Un buffer pool de mayor tamaño permite mantener más datos en RAM y reduce los accesos físicos al disco. Esto es especialmente importante para consultas con múltiples \textit{joins}, que en los años 70 eran computacionalmente inviables no porque el algoritmo fuera malo sino porque no había dónde ejecutarlo \parencite{silberschatz_2019, ramakrishnan_2003}.
+Con más RAM disponible, los gestores podían mantener más datos en memoria y reducir los accesos físicos al disco. Esto es especialmente importante para consultas con múltiples joins, que en los años 70 eran computacionalmente inviables no porque el algoritmo fuera incorrecto, sino porque no había donde ejecutarlo \parencite{silberschatz_2019}.
 
-\subsection{Caché de datos y planes de consulta}
+\subsection{Caché de planes de consulta}
 
-Con más memoria disponible fue posible crear el \textbf{Shared Pool}, donde los SGBD almacenan planes de ejecución ya calculados. Que una consulta frecuente no tenga que recompilarse cada vez que se ejecuta parece algo menor, pero en sistemas con miles de transacciones por segundo la diferencia es significativa \parencite{oracle_concepts_19c}.
+Con suficiente memoria también fue posible guardar los planes de ejecución ya calculados. Una consulta frecuente no tiene que recompilarse cada vez que se ejecuta. En sistemas con miles de transacciones por segundo, esa diferencia es significativa. Es la lógica detrás del Shared Pool de Oracle y del Plan Cache de SQL Server \parencite{oracle_concepts_19c}.
 
-\subsection{Optimización de consultas}
+\subsection{Operaciones en memoria}
 
-Operaciones como \textit{hash joins} o \textit{sort-merge joins} pueden ejecutarse directamente en memoria cuando la PGA es suficientemente grande. Si no lo es, Oracle las desborda a disco mediante archivos temporales, con el impacto en rendimiento que eso implica. La disponibilidad de RAM es lo que determina en cuál de los dos escenarios cae una consulta compleja \parencite{ramakrishnan_2003, silberschatz_2019}.
+Operaciones como hash joins o sort-merge joins pueden ejecutarse directamente en RAM cuando hay espacio. Si no lo hay, el gestor las desborda a disco temporal, con el impacto en rendimiento que eso implica. La disponibilidad de memoria es lo que determina en cuál de los dos escenarios cae una consulta compleja \parencite{ramakrishnan_2003}.
 
 \subsection{Índices más complejos}
 
-Los índices B-Tree y Bitmap necesitan cargarse en memoria para ser útiles. Un índice que vive permanentemente en disco pierde gran parte de su ventaja. El crecimiento del hardware permitió índices más densos y con mayor cobertura, lo que se tradujo en búsquedas mucho más rápidas \parencite{silberschatz_2019}.
+Los índices B-Tree necesitan cargarse en memoria para ser útiles. Un índice que vive permanentemente en disco pierde gran parte de su ventaja porque acceder a él cuesta casi lo mismo que escanear la tabla. Con más RAM disponible fue posible mantener índices más grandes y complejos en memoria, lo que se tradujo en búsquedas mucho más rápidas.
 
-\section{Relación entre costo del hardware y masificación de los SGBD}
+\section{El factor económico}
 
-La adopción masiva de los SGBD relacionales no fue un fenómeno técnico sino también económico. En los años 70, Oracle no era una opción realista para la mayoría de las empresas porque el hardware necesario para que sus procesos de fondo funcionaran correctamente era prohibitivamente caro \parencite{oracle_concepts_19c}. El cambio ocurrió en los años 80, cuando los precios cayeron lo suficiente para que los servidores relacionales pasaran de ser exclusivos de grandes corporaciones a algo accesible para organizaciones medianas \parencite{hennessy_patterson_2017}. La teoría no cambió; cambió quién podía pagarla.
+La adopción masiva no fue solo un fenómeno técnico. En los años 70, el hardware necesario para que Oracle funcionara correctamente era prohibitivamente caro. El cambio ocurrió en los años 80, cuando los precios cayeron lo suficiente para que los servidores relacionales pasaran de ser accesibles solo para grandes corporaciones a algo viable para organizaciones medianas \parencite{hene}. La teoría no cambió; cambió quién podía pagarla.
 
-\section{Impacto en transacciones y control de concurrencia}
+\section{Impacto en transacciones y concurrencia}
 
-La arquitectura física que hace posibles las propiedades ACID depende directamente del hardware disponible \parencite{gray_reuter_1992, haerder1983}. Más RAM permite gestionar tablas de bloqueos más grandes en memoria, lo que se traduce en soporte para más usuarios simultáneos sin que el sistema colapse. Y la velocidad de los discos modernos permite que los \textit{redo logs} y \textit{undo logs} se escriban con latencia mínima, que es la condición necesaria para que la durabilidad no sea simplemente un concepto teórico \parencite{haerder1983}.
+La arquitectura que hace posibles las propiedades ACID también depende del hardware. Más RAM permite gestionar tablas de bloqueos más grandes en memoria, lo que se traduce en soporte para más usuarios simultáneos. Y discos más rápidos permiten que los redo logs se escriban con latencia mínima, que es la condición necesaria para que la durabilidad no sea solo un concepto teórico \parencite{gray_reuter_1992}.

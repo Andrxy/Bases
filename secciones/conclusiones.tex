@@ -4,13 +4,13 @@
 
 \chapter{Conclusiones}
 
-Esta investigación dejó claro que las bases de datos no se pueden entender bien sin conocer el contexto en que surgieron. Cada decisión arquitectónica tiene una razón detrás, y muchas veces esa razón es histórica.
+Investigar este tema dejó claro que las bases de datos no se pueden entender bien sin conocer el contexto en que surgieron. Cada decisión arquitectónica tiene una razón detrás, y muchas veces esa razón es histórica.
 
-\textbf{El hardware limitó la teoría, no al revés.} Codd propuso el modelo relacional en 1970, pero tardó más de una década en adoptarse masivamente porque la RAM era carísima. El modelo era correcto desde el principio; el hardware era el que no estaba listo. Entender esto cambia la forma de leer la historia de las bases de datos.
+\textbf{El hardware limitó la teoría, no al revés.} Codd propuso el modelo relacional en 1970, pero tardó más de una década en adoptarse masivamente porque la RAM era cara. El modelo era correcto desde el principio; lo que no estaba listo era el hardware. Entender esto cambia la forma de leer la historia de las bases de datos.
 
-\textbf{La arquitectura de Oracle no es arbitraria.} Estudiar en detalle sus procesos y componentes de memoria deja claro que cada pieza responde a una pregunta concreta: ¿qué pasa si se va la luz justo después de un commit? ¿cómo se evita que un usuario bloquee a todos los demás? Las respuestas a esas preguntas son, literalmente, la arquitectura del sistema.
+\textbf{La arquitectura de Oracle no es arbitraria.} Estudiar sus procesos y componentes de memoria en detalle deja claro que cada pieza responde a una pregunta concreta: ¿qué pasa si se va la luz justo después de un commit? ¿Cómo se evita que un usuario bloquee a todos los demás? Las respuestas a esas preguntas son, literalmente, la arquitectura del sistema.
 
-\textbf{No hay un SGBD universalmente superior.} PostgreSQL resuelve el MVCC de forma más limpia que Oracle, pero esa misma decisión complica el VACUUM. MySQL es más simple de operar, pero esa simpleza tiene un precio en escenarios de alta concurrencia. Oracle es el más robusto y también el más caro y complejo. Hay trade-offs, no ganadores.
+\textbf{No hay un SGBD universalmente superior.} PostgreSQL resuelve el MVCC de forma más limpia que Oracle, pero esa misma decisión genera la necesidad de VACUUM. MySQL es más simple de operar, pero esa simpleza tiene un límite en escenarios de alta concurrencia. Oracle es el más robusto y también el más caro y complejo. Hay trade-offs, no ganadores absolutos.
 
 \textbf{La brecha entre usar y entender un SGBD es grande.} Es perfectamente posible escribir SQL durante años sin saber qué hace LGWR o por qué importa el tamaño del buffer cache. Pero esa ignorancia tiene un costo cuando algo falla en producción o cuando hay que tomar decisiones de diseño que afectarán el rendimiento a largo plazo.
 
